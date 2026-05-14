@@ -17,19 +17,19 @@ function BookingFlow() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // --- NEW: FIREBASE AUTH STATE ---
+  // --- FIREBASE AUTH STATE ---
   const [user, setUser] = useState<User | null>(null);
 
   // --- URL DATA ---
   const dynamicCarName = searchParams.get("car") || "Premium Vehicle";
   const rawPrice = searchParams.get("price")?.replace(/[^0-9]/g, '') || "0"; 
   const baseRate = parseInt(rawPrice);
-  const city = searchParams.get("city") || "Dimapur"; 
+  const urlCity = searchParams.get("city") || "Dimapur"; 
 
-  // --- FORM STATES ---
-  const [pickupDate, setPickupDate] = useState(searchParams.get("pickup") || "");
-  const [dropoffDate, setDropoffDate] = useState(searchParams.get("dropoff") || "");
-  const [pickupLocation, setPickupLocation] = useState(city);
+  // --- FORM STATES (Start Blank to Prevent Hydration Errors) ---
+  const [pickupDate, setPickupDate] = useState("");
+  const [dropoffDate, setDropoffDate] = useState("");
+  const [pickupLocation, setPickupLocation] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState("");
   const [specialRemarks, setSpecialRemarks] = useState("");
   
@@ -67,6 +67,19 @@ function BookingFlow() {
     });
     return () => unsubscribe();
   }, []);
+
+  // --- THE MAGIC FIX: FORCE THE FORM TO READ THE URL ---
+  useEffect(() => {
+    if (searchParams) {
+      const pDate = searchParams.get("pickup");
+      const dDate = searchParams.get("dropoff");
+      const pCity = searchParams.get("city");
+      
+      if (pDate) setPickupDate(pDate);
+      if (dDate) setDropoffDate(dDate);
+      if (pCity) setPickupLocation(pCity);
+    }
+  }, [searchParams]);
 
   // --- FETCH SETTINGS FROM FIREBASE ---
   useEffect(() => {
@@ -114,7 +127,7 @@ function BookingFlow() {
 
   // --- SECURE BOOKING SUBMISSION ---
   const handleBookingSubmit = async () => {
-    if (!paymentScreenshot || !user) return; // Failsafe check
+    if (!paymentScreenshot || !user) return; 
     setIsSubmittingBooking(true);
 
     try {
@@ -123,12 +136,12 @@ function BookingFlow() {
       await uploadBytes(imageRef, paymentScreenshot);
       const downloadUrl = await getDownloadURL(imageRef);
 
-      // 2. Package booking details (Now using the real user's email!)
+      // 2. Package booking details
       const bookingData = {
         vehicleName: dynamicCarName,
         vendorName: vendorName,
-        customerName: user.email, // <--- PERFECT SYNC WITH LOGGED IN USER
-        pickupCity: city,
+        customerName: user.email, 
+        pickupCity: urlCity,
         pickupLocation: pickupLocation,
         dropoffLocation: dropoffLocation,
         pickupDate: pickupDate,
@@ -148,14 +161,14 @@ function BookingFlow() {
       // 3. Save to database
       await addDoc(collection(db, "bookings"), bookingData);
 
-      // --- NEW: TRIGGER AUTOMATED WHATSAPP TO VENDOR ---
+      // --- TRIGGER AUTOMATED WHATSAPP TO VENDOR ---
       try {
         await fetch('/api/whatsapp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: "NEW_BOOKING",
-            vendorPhone: "919876543210", // You will pull this dynamically from vendorSettings later
+            vendorPhone: "919876543210", 
             vehicleName: dynamicCarName,
             customerDetails: `Name: ${user.email}\nPickup: ${pickupDate}`,
           })
@@ -163,13 +176,12 @@ function BookingFlow() {
       } catch (waError) {
         console.error("WhatsApp notification failed silently:", waError);
       }
-      // ------------------------------------------------
 
       setShowPaymentModal(false);
       setPaymentScreenshot(null);
       alert("Success! Your booking request and payment receipt have been sent to the vendor for confirmation.");
       
-      // Route them to their new dynamic profile page to see the booking!
+      // Route them to profile
       window.location.href = "/profile";
       
     } catch (error) {
