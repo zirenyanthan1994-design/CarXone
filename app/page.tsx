@@ -6,6 +6,12 @@ import Link from "next/link";
 import { db } from "./firebase/config"; 
 import { collection, query, where, getDocs } from "firebase/firestore";
 
+const NAGALAND_CITIES = [
+  "Dimapur", "Kohima", "Mokokchung", "Tuensang", "Wokha", "Zunheboto", 
+  "Mon", "Phek", "Kiphire", "Longleng", "Peren", "Noklak", "Shamator", 
+  "Niuland", "Chumoukedima", "Tseminyu"
+];
+
 // The exact blueprint of our live Firebase data
 interface Vehicle {
   id: string;
@@ -138,9 +144,7 @@ function HomeContent() {
                 className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent cursor-pointer font-bold transition text-sm"
               >
                 <option value="" disabled>Pickup City...</option>
-                <option value="dimapur">Dimapur</option>
-                <option value="kohima">Kohima</option>
-                <option value="guwahati">Guwahati</option>
+                {NAGALAND_CITIES.map(c => <option key={`pickup-${c}`} value={c}>{c}</option>)}
               </select>
             </div>
 
@@ -152,10 +156,8 @@ function HomeContent() {
                 className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent cursor-pointer font-bold transition text-sm"
               >
                 <option value="" disabled>Drop-off City...</option>
-                <option value="guwahati">Guwahati</option>
-                <option value="dimapur">Dimapur</option>
-                <option value="kohima">Kohima</option>
-                <option value="local">Local Only</option>
+                <option value="Local Only">Local Only</option>
+                {NAGALAND_CITIES.map(c => <option key={`dropoff-${c}`} value={c}>{c}</option>)}
               </select>
             </div>
 
