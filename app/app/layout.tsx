@@ -27,7 +27,7 @@ export default function RootLayout({
               
               <div className="flex items-center space-x-4">
                 <a href="/">
-                  {/* --- HEADER KEEPS THE LARGE IMAGE LOGO --- */}
+                  {/* --- UPGRADED: LARGER HEADER LOGO --- */}
                   <img src="/logo.png" alt="CarXone Logo" className="h-16 md:h-20 w-auto object-contain cursor-pointer hover:opacity-70 transition duration-300" />
                 </a>
               </div>
@@ -45,6 +45,7 @@ export default function RootLayout({
                     <div className="px-6 py-3 bg-gray-50/50">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fleet Categories</span>
                     </div>
+                    {/* CHANGED TEXT BACK TO ORIGINAL */}
                     <a href="/cars" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Cars</a>
                     <a href="/bikes" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Bikes</a>
                     <a href="/scooty" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Scooty</a>
@@ -82,11 +83,11 @@ export default function RootLayout({
               
               <div className="text-left max-w-sm">
                 <a href="/">
-                  {/* --- FOOTER NOW USES CLEAN WHITE TEXT --- */}
-                  <span className="text-4xl font-black tracking-widest text-white block mb-6 hover:opacity-80 transition duration-300">CarXone</span>
+                  {/* --- UPGRADED: REPLACED TEXT WITH IMAGE LOGO --- */}
+                  <img src="/logo.png" alt="CarXone Logo" className="h-16 md:h-20 w-auto object-contain mb-6 cursor-pointer hover:opacity-70 transition duration-300" />
                 </a>
                 <p className="text-gray-400 text-sm font-medium leading-relaxed mb-8">
-                  Together with our trusted partners we are here to fulfil your needs. Drive the cars, scooties and bikes of your choice.
+                  Premium vehicle rentals without the friction. Drive the best cars and bikes in Nagaland today.
                 </p>
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center hover:bg-green-600 hover:border-green-600 cursor-pointer transition duration-300">
@@ -119,7 +120,7 @@ export default function RootLayout({
                   &copy; {new Date().getFullYear()} CarXone. All rights reserved.
                 </div>
                 <div className="text-gray-600 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                   Made for <span className="text-white">You</span>
+                   Made for <span className="text-white">Nagaland</span>
                 </div>
             </div>
           </footer>
