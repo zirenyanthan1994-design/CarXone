@@ -26,7 +26,10 @@ export default function AddVehicle() {
   // THE PRICING ENGINES
   // -----------------------------------------
   const [kmTiers, setKmTiers] = useState([{ km: "", price: "" }]);
-  const [destinations, setDestinations] = useState([{ city: "", price: "" }]); // NEW: Destination State
+  const [destinations, setDestinations] = useState([{ city: "", price: "" }]); 
+  
+  // NEW: Multi-Day Tier Billing Logic State
+  const [tierBillingLogic, setTierBillingLogic] = useState("all_days");
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageCount, setImageCount] = useState(0);
@@ -52,7 +55,7 @@ export default function AddVehicle() {
     setKmTiers(newTiers);
   };
 
-  // --- NEW: DESTINATION HELPER FUNCTIONS ---
+  // --- DESTINATION HELPER FUNCTIONS ---
   const handleDestinationChange = (index: number, field: 'city' | 'price', value: string) => {
     const newDests = [...destinations];
     newDests[index][field] = value;
@@ -134,12 +137,10 @@ export default function AddVehicle() {
       let finalDestinations: any[] = [];
 
       if (pricingModel === "per_hire") {
-        // Clean the array and grab only valid entries
         finalDestinations = destinations
           .filter(d => d.city !== "" && d.price !== "")
           .map(d => ({ city: d.city, price: Number(d.price) }));
         
-        // Find the absolute lowest price to show on the main feed
         if (finalDestinations.length > 0) {
           finalBasePrice = Math.min(...finalDestinations.map(d => d.price));
         }
@@ -153,7 +154,7 @@ export default function AddVehicle() {
         model,
         registration: regNumber,
         pricingModel,
-        basePrice: finalBasePrice, // Saves the calculated lowest price
+        basePrice: finalBasePrice, 
         outletLocation: outletLocation, 
         images: uploadedImageUrls, 
         status: "Available", 
@@ -161,11 +162,14 @@ export default function AddVehicle() {
         addedOn: new Date().toISOString()
       };
 
-      // Attach KM Tiers if chosen
+      // Attach KM Tiers AND Billing Logic if chosen
       if (pricingModel === "flat_rate_km_limit") {
         vehicleData.kmTiers = kmTiers
           .filter(tier => tier.km !== "" && tier.price !== "")
           .map(tier => ({ km: Number(tier.km), price: Number(tier.price) }));
+        
+        // NEW: Save the vendor's billing choice to the database
+        vehicleData.tierBillingLogic = tierBillingLogic; 
       }
 
       // Attach Destinations if chosen
@@ -185,7 +189,8 @@ export default function AddVehicle() {
       setBasePrice("");
       setOutletLocation(""); 
       setKmTiers([{ km: "", price: "" }]); 
-      setDestinations([{ city: "", price: "" }]); // Reset destinations
+      setDestinations([{ city: "", price: "" }]); 
+      setTierBillingLogic("all_days"); // Reset billing logic
       setImageCount(0);
       setImageFiles([]);
       previewUrls.forEach(url => URL.revokeObjectURL(url));
@@ -293,7 +298,6 @@ export default function AddVehicle() {
               </select>
             </div>
             
-            {/* ONLY SHOW BASE PRICE IF THEY ARE NOT USING PER HIRE */}
             {pricingModel !== "per_hire" && (
               <div className="bg-gray-50 p-4 border border-gray-200 rounded mt-2">
                 <div>
@@ -358,6 +362,23 @@ export default function AddVehicle() {
                     + Add Another Distance Tier
                   </button>
                 </div>
+
+                {/* --- NEW: MULTI-DAY BILLING LOGIC DROPDOWN --- */}
+                <div className="mt-6 pt-5 border-t border-blue-100">
+                  <label className="block text-xs font-black text-[#003366] uppercase mb-1">Multi-Day Tier Billing Logic</label>
+                  <p className="text-[10px] text-gray-500 mb-3 leading-relaxed">
+                    If a customer books for multiple days (e.g., 3 days) and their destination triggers a higher KM tier, how do you want the system to calculate the total?
+                  </p>
+                  <select 
+                    value={tierBillingLogic}
+                    onChange={(e) => setTierBillingLogic(e.target.value)}
+                    className="w-full border-2 border-blue-200 rounded p-3 text-sm font-bold bg-white focus:border-[#003366] outline-none cursor-pointer shadow-sm text-black"
+                  >
+                    <option value="all_days">Charge the higher tier price for ALL days of the trip</option>
+                    <option value="first_day_only">Charge the higher tier price for the FIRST day only, then revert to Starting Base Price</option>
+                  </select>
+                </div>
+
               </div>
             )}
 
