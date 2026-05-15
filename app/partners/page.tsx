@@ -68,7 +68,7 @@ interface Booking {
 export default function PartnersDashboard() {
   const router = useRouter();
   
-  // --- NEW: AUTHENTICATION GATEKEEPER STATE ---
+  // --- AUTHENTICATION GATEKEEPER STATE ---
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -113,13 +113,13 @@ export default function PartnersDashboard() {
   const [isSubmittingVerify, setIsSubmittingVerify] = useState(false);
 
   // ==========================================
-  // NEW: THE GATEKEEPER SECURITY CHECK
+  // THE GATEKEEPER SECURITY CHECK (UPDATED)
   // ==========================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        // Not logged in? Kick them to the login page immediately.
-        router.push("/login"); 
+        // Not logged in? Kick them to the VENDOR login page immediately.
+        router.push("/partners/login"); 
       } else {
         try {
           // Check if this specific user has a Vendor Profile in the database
@@ -130,7 +130,7 @@ export default function PartnersDashboard() {
             // They are logged in, but they are a CUSTOMER!
             alert("Access Denied: You are logged in with a Customer account. You must use a registered Vendor account to access this dashboard.");
             await auth.signOut();
-            router.push("/login");
+            router.push("/partners/login");
           } else {
             // They are a verified vendor! Open the gates.
             setIsAuthChecking(false);
@@ -138,7 +138,7 @@ export default function PartnersDashboard() {
           }
         } catch (error) {
           console.error("Auth check failed:", error);
-          router.push("/login");
+          router.push("/partners/login");
         }
       }
     });
@@ -301,7 +301,7 @@ export default function PartnersDashboard() {
 
   const handleLogout = async () => {
     await auth.signOut();
-    router.push("/login");
+    router.push("/partners/login");
   };
 
   let totalGrossRevenue = 0;
@@ -956,7 +956,7 @@ export default function PartnersDashboard() {
       )}
 
       {/* ========================================= */}
-      {/* NEW: CUSTOMER BOOKING VERIFICATION MODAL */}
+      {/* CUSTOMER BOOKING VERIFICATION MODAL */}
       {/* ========================================= */}
       {verifyingBooking && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -968,7 +968,6 @@ export default function PartnersDashboard() {
             
             <div className="p-4 sm:p-8 flex flex-col gap-4 sm:gap-6">
               
-              {/* Customer Info */}
               <div className="flex items-center gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#003366] text-white rounded-full flex items-center justify-center text-lg sm:text-xl font-black uppercase flex-shrink-0">
                   {verifyingBooking.customerName[0]}
@@ -979,7 +978,6 @@ export default function PartnersDashboard() {
                 </div>
               </div>
 
-              {/* Trip Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-gray-50 p-3 sm:p-0 sm:bg-transparent rounded sm:rounded-none">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle</p>
@@ -999,7 +997,6 @@ export default function PartnersDashboard() {
                 </div>
               </div>
 
-              {/* Add-ons & Instructions */}
               <div className="bg-blue-50 border border-blue-100 p-3 sm:p-4 rounded-lg">
                 <p className="text-[10px] font-black text-[#003366] uppercase tracking-widest mb-2">Trip Extras</p>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -1016,7 +1013,6 @@ export default function PartnersDashboard() {
                 )}
               </div>
 
-              {/* Payment Proof Button */}
               <div className="flex flex-col gap-2">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer Uploaded Receipt</p>
                 <a 
@@ -1030,7 +1026,6 @@ export default function PartnersDashboard() {
                 </a>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full mt-2 pt-4 border-t border-gray-100">
                 <button 
                   onClick={() => openRejectModal(verifyingBooking, "booking")} 
