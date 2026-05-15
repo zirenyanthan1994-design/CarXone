@@ -31,12 +31,11 @@ interface Vehicle {
 function HomeContent() {
   const router = useRouter();
 
-  // 1. STATE VARIABLES: These memorize what the user types in the search bar
+  // 1. REVISED STATE VARIABLES: These memorize the new search filters
   const [pickupCity, setPickupCity] = useState("");
-  const [dropoffCity, setDropoffCity] = useState("");
-  const [pickupDate, setPickupDate] = useState("");
-  const [dropoffDate, setDropoffDate] = useState("");
-  const [vehicleType, setVehicleType] = useState("All Vehicles");
+  const [category, setCategory] = useState("All Vehicles");
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
 
   // --- FIREBASE DATA STATES ---
   const [isLoading, setIsLoading] = useState(true);
@@ -59,12 +58,12 @@ function HomeContent() {
 
         const now = new Date();
 
-        // 1. Sort NEWEST (Increased from top 9 to top 12 to fit the new grid)
+        // 1. Sort NEWEST
         const sortedNewest = [...allVehicles]
           .sort((a, b) => new Date(b.addedOn || 0).getTime() - new Date(a.addedOn || 0).getTime())
           .slice(0, 12); 
         
-        // 2. Sort FEATURED (Increased to top 12)
+        // 2. Sort FEATURED
         let sortedFeatured = allVehicles
           .filter(v => v.featuredUntil && new Date(v.featuredUntil) > now)
           .slice(0, 12);
@@ -84,7 +83,7 @@ function HomeContent() {
           sortedFeatured = [...sortedFeatured, ...premium];
         }
 
-        // 3. Sort POPULAR (Increased to top 12)
+        // 3. Sort POPULAR
         const sortedPopular = [...allVehicles]
           .sort((a, b) => a.basePrice - b.basePrice)
           .slice(0, 12);
@@ -103,14 +102,15 @@ function HomeContent() {
     fetchHomeData();
   }, []);
 
-  // 2. THE SEARCH FUNCTION
+  // 2. THE SEARCH FUNCTION (REVISED FOR NEW FILTERS)
   const handleSearch = () => {
     let targetPage = "/cars";
-    if (vehicleType === "Bikes") targetPage = "/bikes";
-    if (vehicleType === "Scootys") targetPage = "/scooty";
-    if (vehicleType === "Trucks") targetPage = "/trucks";
+    if (category === "Bikes") targetPage = "/bikes";
+    if (category === "Scootys") targetPage = "/scooty";
+    if (category === "Trucks") targetPage = "/trucks";
 
-    router.push(`${targetPage}?city=${pickupCity}&dropoffCity=${dropoffCity}&pickup=${pickupDate}&dropoff=${dropoffDate}`);
+    // Pass the new specific filter items safely through the URL
+    router.push(`${targetPage}?city=${pickupCity}&brand=${brand}&model=${model}`);
   };
 
   return (
@@ -125,7 +125,6 @@ function HomeContent() {
         
         <div className="relative max-w-7xl mx-auto flex flex-col items-center text-center z-10 w-full">
           
-          {/* REVISED HERO TEXT */}
           <h1 className="text-6xl md:text-8xl font-black tracking-tight mb-4 text-white drop-shadow-lg">
             CarXone
           </h1>
@@ -133,59 +132,28 @@ function HomeContent() {
             One Stop Solution, For Your Car Rentals.
           </h2>
           
-          {/* THE SMART SEARCH BAR (Embedded in Hero) */}
-          <div className="bg-white rounded-xl shadow-2xl p-4 w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end text-left mt-4">
+          {/* THE SMART SEARCH BAR */}
+          <div className="bg-white rounded-xl shadow-2xl p-4 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end text-left mt-4">
             
+            {/* 1. Outlet / Starting Point */}
             <div className="w-full">
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Starting Point</label>
+              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Outlet / Starting Point</label>
               <select 
                 value={pickupCity} 
                 onChange={(e) => setPickupCity(e.target.value)}
                 className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent cursor-pointer font-bold transition text-sm"
               >
-                <option value="" disabled>Pickup City...</option>
+                <option value="" disabled>Select City...</option>
                 {NAGALAND_CITIES.map(c => <option key={`pickup-${c}`} value={c}>{c}</option>)}
               </select>
             </div>
 
+            {/* 2. Category */}
             <div className="w-full">
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Destination</label>
+              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Category</label>
               <select 
-                value={dropoffCity} 
-                onChange={(e) => setDropoffCity(e.target.value)}
-                className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent cursor-pointer font-bold transition text-sm"
-              >
-                <option value="" disabled>Drop-off City...</option>
-                <option value="Local Only">Local Only</option>
-                {NAGALAND_CITIES.map(c => <option key={`dropoff-${c}`} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            <div className="w-full">
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Pickup Date</label>
-              <input 
-                type="datetime-local" 
-                value={pickupDate}
-                onChange={(e) => setPickupDate(e.target.value)}
-                className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black cursor-pointer bg-transparent text-[11px] font-bold transition" 
-              />
-            </div>
-
-            <div className="w-full">
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Return Date</label>
-              <input 
-                type="datetime-local" 
-                value={dropoffDate}
-                onChange={(e) => setDropoffDate(e.target.value)}
-                className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black cursor-pointer bg-transparent text-[11px] font-bold transition" 
-              />
-            </div>
-
-            <div className="w-full">
-              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Vehicle Type</label>
-              <select 
-                value={vehicleType}
-                onChange={(e) => setVehicleType(e.target.value)}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                 className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent cursor-pointer font-bold transition text-sm"
               >
                 <option>All Vehicles</option>
@@ -194,6 +162,30 @@ function HomeContent() {
                 <option>Scootys</option>
                 <option>Trucks</option>
               </select>
+            </div>
+
+            {/* 3. Brand */}
+            <div className="w-full">
+              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Brand</label>
+              <input 
+                type="text" 
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="e.g. Toyota"
+                className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent font-bold transition text-sm"
+              />
+            </div>
+
+            {/* 4. Model */}
+            <div className="w-full">
+              <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Model</label>
+              <input 
+                type="text" 
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="e.g. Innova"
+                className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent font-bold transition text-sm"
+              />
             </div>
 
             <button 
@@ -208,7 +200,7 @@ function HomeContent() {
       </section>
 
       {/* ----------------------------------------- */}
-      {/* 2. LIVE VEHICLE GRIDS (NOW 3 COLUMNS ON MOBILE) */}
+      {/* 2. LIVE VEHICLE GRIDS */}
       {/* ----------------------------------------- */}
       <div className="w-full max-w-7xl px-2 md:px-6 flex flex-col gap-16 md:gap-24 mt-12 md:mt-16 mb-24 md:mb-32">
         
@@ -226,7 +218,6 @@ function HomeContent() {
                   <h3 className="text-xl md:text-3xl font-black text-black tracking-tight">Featured Vehicles</h3>
                   <a href="/cars" className="text-[10px] md:text-base text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
                 </div>
-                {/* UPGRADED GRID: 3 items on Mobile, 4 on Desktop */}
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-8">
                   {featuredVehicles.map(vehicle => <VehicleCard key={`feat-${vehicle.id}`} vehicle={vehicle} isFeatured />)}
                 </div>
@@ -240,7 +231,6 @@ function HomeContent() {
                   <h3 className="text-xl md:text-3xl font-black text-black tracking-tight">Newly Added</h3>
                   <a href="/cars" className="text-[10px] md:text-base text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
                 </div>
-                {/* UPGRADED GRID: 3 items on Mobile, 4 on Desktop */}
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-8">
                   {newestVehicles.map(vehicle => <VehicleCard key={`new-${vehicle.id}`} vehicle={vehicle} />)}
                 </div>
@@ -254,7 +244,6 @@ function HomeContent() {
                   <h3 className="text-xl md:text-3xl font-black text-black tracking-tight">Most Popular</h3>
                   <a href="/cars" className="text-[10px] md:text-base text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
                 </div>
-                {/* UPGRADED GRID: 3 items on Mobile, 4 on Desktop */}
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-8">
                   {popularVehicles.map(vehicle => <VehicleCard key={`pop-${vehicle.id}`} vehicle={vehicle} />)}
                 </div>
@@ -276,7 +265,6 @@ function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeat
   const activePickup = searchParams?.get("pickup") || "";
   const activeDropoff = searchParams?.get("dropoff") || "";
 
-  // Magic Discount Calculator
   const calculateDiscountedPrice = (basePrice: number, discount?: { type: string, value: number } | null) => {
     if (!discount) return basePrice;
     if (discount.type === 'flat') return Math.max(0, basePrice - discount.value);
@@ -292,16 +280,12 @@ function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeat
   else if (vehicle.pricingModel === "flat_rate_km_limit") priceLabel = "Per 24h (KM Limit)";
   else if (vehicle.pricingModel === "per_hire") priceLabel = "Per Hire (Flat)";
 
-  // Builds the Smart Link that passes data to the checkout page
   const smartBookLink = `/book?car=${encodeURIComponent(vehicle.brand + " " + vehicle.model)}&price=${finalPrice}&pickup=${activePickup}&dropoff=${activeDropoff}&city=${encodeURIComponent(vehicle.outletLocation)}`;
-
-  // Check if it is currently a paid featured ad
   const isPaidFeature = vehicle.featuredUntil && new Date(vehicle.featuredUntil) > new Date();
 
   return (
     <div className={`group bg-white rounded-lg md:rounded-xl border overflow-hidden transition-all duration-300 flex flex-col ${isFeatured ? 'border-blue-200 shadow-md hover:shadow-xl' : 'border-gray-200 hover:border-[#003366] hover:shadow-lg'}`}>
       
-      {/* IMAGE CONTAINER */}
       <div className="bg-gray-100 aspect-[4/3] w-full flex items-center justify-center relative overflow-hidden">
         {vehicle.images && vehicle.images[0] ? (
           <img src={vehicle.images[0]} alt={vehicle.model} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
@@ -309,7 +293,6 @@ function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeat
           <span className="text-[8px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">No Image</span>
         )}
 
-        {/* Paid Featured Badge */}
         {isPaidFeature && (
            <div className="absolute top-1 right-1 md:top-3 md:right-3 bg-yellow-400 text-yellow-900 text-[8px] md:text-[10px] font-black px-1.5 py-0.5 md:px-2 md:py-1 uppercase tracking-widest rounded shadow-md z-10 flex items-center gap-1">
              <svg className="w-2 h-2 md:w-3 md:h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
@@ -317,7 +300,6 @@ function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeat
            </div>
         )}
 
-        {/* Discount Badge */}
         {vehicle.discount && vehicle.discount.value > 0 && (
           <div className="absolute top-1 left-1 md:top-3 md:left-3 bg-red-600 text-white text-[8px] md:text-[10px] font-black px-1.5 py-0.5 md:px-2 md:py-1 uppercase tracking-widest rounded shadow-md z-10">
             {vehicle.discount.type === 'percentage' ? `${vehicle.discount.value}% OFF` : `₹${vehicle.discount.value} OFF`}
@@ -340,14 +322,13 @@ function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeat
         
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between pt-2 md:pt-4 border-t border-gray-100 gap-1 md:gap-0">
           <div className="flex flex-col w-full md:w-auto">
-            {/* DYNAMIC PRICING LABEL */}
-            <p className="hidden md:block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">{priceLabel}</p>
+            {/* UPGRADE: Removed "hidden md:block" so the label shows up on mobile too! */}
+            <p className="text-[7px] leading-tight md:text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">{priceLabel}</p>
             <div className="flex items-end gap-1">
                <span className="text-xs sm:text-sm md:text-xl font-black text-black leading-none">₹{finalPrice}</span>
-               <span className="text-[8px] font-bold text-gray-500 md:hidden">/d</span>
             </div>
           </div>
-          <a href={smartBookLink} className="w-full md:w-auto text-center bg-[#003366] text-white text-[8px] md:text-sm font-bold px-2 py-1.5 md:px-6 md:py-3 rounded hover:bg-black transition shadow-sm">
+          <a href={smartBookLink} className="w-full md:w-auto text-center bg-[#003366] text-white text-[8px] md:text-sm font-bold px-2 py-1.5 md:px-6 md:py-3 rounded hover:bg-black transition shadow-sm mt-1 md:mt-0">
             Book
           </a>
         </div>
