@@ -12,6 +12,13 @@ const NAGALAND_CITIES = [
   "Niuland", "Chumoukedima", "Tseminyu"
 ];
 
+// --- NEW: COMPREHENSIVE BRAND DICTIONARY ---
+const VEHICLE_BRANDS = {
+  "Cars": ["Ford", "Honda", "Hyundai", "Kia", "Mahindra", "Maruti Suzuki", "MG", "Nissan", "Renault", "Skoda", "Tata", "Toyota", "Volkswagen"],
+  "Two Wheelers": ["Aprilia", "Ather", "Bajaj", "Hero", "Honda", "Jawa", "KTM", "Ola", "Royal Enfield", "Suzuki", "TVS", "Vespa", "Yamaha"],
+  "Trucks": ["Ashok Leyland", "BharatBenz", "Eicher", "Force", "Isuzu", "Mahindra", "Swaraj Mazda", "Tata"]
+};
+
 // The exact blueprint of our live Firebase data
 interface Vehicle {
   id: string;
@@ -31,7 +38,7 @@ interface Vehicle {
 function HomeContent() {
   const router = useRouter();
 
-  // 1. REVISED STATE VARIABLES: These memorize the new search filters
+  // 1. STATE VARIABLES
   const [pickupCity, setPickupCity] = useState("");
   const [category, setCategory] = useState("All Vehicles");
   const [brand, setBrand] = useState("");
@@ -42,6 +49,23 @@ function HomeContent() {
   const [newestVehicles, setNewestVehicles] = useState<Vehicle[]>([]);
   const [featuredVehicles, setFeaturedVehicles] = useState<Vehicle[]>([]);
   const [popularVehicles, setPopularVehicles] = useState<Vehicle[]>([]);
+
+  // --- NEW: SMART FILTER LOGIC ---
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCategory(e.target.value);
+    setBrand(""); // Instantly clear the brand if the category changes
+    setModel(""); // Clear the model too to prevent mismatches
+  };
+
+  const getAvailableBrands = () => {
+    if (category === "Cars") return VEHICLE_BRANDS["Cars"];
+    if (category === "Two Wheelers") return VEHICLE_BRANDS["Two Wheelers"];
+    if (category === "Trucks") return VEHICLE_BRANDS["Trucks"];
+    
+    // If "All Vehicles" is selected, combine everything into one massive sorted list!
+    const all = [...VEHICLE_BRANDS["Cars"], ...VEHICLE_BRANDS["Two Wheelers"], ...VEHICLE_BRANDS["Trucks"]];
+    return Array.from(new Set(all)).sort();
+  };
 
   // --- FETCH & SORT LIVE VEHICLES ---
   useEffect(() => {
@@ -102,14 +126,12 @@ function HomeContent() {
     fetchHomeData();
   }, []);
 
-  // 2. THE SEARCH FUNCTION (REVISED FOR NEW FILTERS)
+  // 2. THE SEARCH FUNCTION
   const handleSearch = () => {
     let targetPage = "/cars";
-    if (category === "Bikes") targetPage = "/bikes";
-    if (category === "Scootys") targetPage = "/scooty";
+    if (category === "Two Wheelers") targetPage = "/bikes"; 
     if (category === "Trucks") targetPage = "/trucks";
 
-    // Pass the new specific filter items safely through the URL
     router.push(`${targetPage}?city=${pickupCity}&brand=${brand}&model=${model}`);
   };
 
@@ -120,7 +142,6 @@ function HomeContent() {
       {/* 1. MASSIVE HERO SECTION & SEARCH ENGINE */}
       {/* ----------------------------------------- */}
       <section className="relative w-full bg-[#0a0a0a] text-white pt-24 pb-32 px-6 overflow-hidden border-b-4 border-[#003366] flex flex-col items-center justify-center">
-        {/* Background Overlay */}
         <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center"></div>
         
         <div className="relative max-w-7xl mx-auto flex flex-col items-center text-center z-10 w-full">
@@ -153,27 +174,29 @@ function HomeContent() {
               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Category</label>
               <select 
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={handleCategoryChange}
                 className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent cursor-pointer font-bold transition text-sm"
               >
                 <option>All Vehicles</option>
                 <option>Cars</option>
-                <option>Bikes</option>
-                <option>Scootys</option>
+                <option>Two Wheelers</option>
                 <option>Trucks</option>
               </select>
             </div>
 
-            {/* 3. Brand */}
+            {/* 3. Brand - DYNAMIC DROPDOWN */}
             <div className="w-full">
               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Brand</label>
-              <input 
-                type="text" 
+              <select 
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                placeholder="e.g. Toyota"
-                className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent font-bold transition text-sm"
-              />
+                className="w-full border-b-2 border-gray-100 focus:border-[#003366] outline-none py-2 text-black bg-transparent cursor-pointer font-bold transition text-sm"
+              >
+                <option value="">All Brands</option>
+                {getAvailableBrands().map(b => (
+                  <option key={`brand-${b}`} value={b}>{b}</option>
+                ))}
+              </select>
             </div>
 
             {/* 4. Model */}
@@ -322,7 +345,6 @@ function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeat
         
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between pt-2 md:pt-4 border-t border-gray-100 gap-1 md:gap-0">
           <div className="flex flex-col w-full md:w-auto">
-            {/* UPGRADE: Removed "hidden md:block" so the label shows up on mobile too! */}
             <p className="text-[7px] leading-tight md:text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">{priceLabel}</p>
             <div className="flex items-end gap-1">
                <span className="text-xs sm:text-sm md:text-xl font-black text-black leading-none">₹{finalPrice}</span>
