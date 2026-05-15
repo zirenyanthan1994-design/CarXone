@@ -200,10 +200,14 @@ function BookingFlow() {
       {/* ----------------------------------------- */}
       <div className="flex-grow flex flex-col gap-8">
         
-        <a href="javascript:history.back()" className="text-sm font-bold text-gray-500 hover:text-[#003366] transition self-start flex items-center gap-2">
+        {/* --- UPGRADED SMART BACK BUTTON --- */}
+        <button 
+          onClick={() => router.back()} 
+          className="text-sm font-bold text-gray-500 hover:text-[#003366] transition self-start flex items-center gap-2 outline-none bg-transparent border-none cursor-pointer"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
           Back to Vehicles
-        </a>
+        </button>
 
         <section className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
           <h2 className="text-2xl font-black text-[#003366] border-b border-gray-100 pb-4 mb-6 uppercase tracking-tight">1. Trip Details</h2>
