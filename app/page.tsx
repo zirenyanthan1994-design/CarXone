@@ -59,35 +59,35 @@ function HomeContent() {
 
         const now = new Date();
 
-        // 1. Sort NEWEST (top 9)
+        // 1. Sort NEWEST (Increased from top 9 to top 12 to fit the new grid)
         const sortedNewest = [...allVehicles]
           .sort((a, b) => new Date(b.addedOn || 0).getTime() - new Date(a.addedOn || 0).getTime())
-          .slice(0, 9); 
+          .slice(0, 12); 
         
-        // 2. Sort FEATURED (Prioritize Paid Ads, then Discounts, then Premium, top 9)
+        // 2. Sort FEATURED (Increased to top 12)
         let sortedFeatured = allVehicles
           .filter(v => v.featuredUntil && new Date(v.featuredUntil) > now)
-          .slice(0, 9);
+          .slice(0, 12);
         
-        if (sortedFeatured.length < 9) {
+        if (sortedFeatured.length < 12) {
           const discounted = allVehicles
             .filter(v => v.discount && v.discount.value > 0 && !sortedFeatured.includes(v))
-            .slice(0, 9 - sortedFeatured.length);
+            .slice(0, 12 - sortedFeatured.length);
           sortedFeatured = [...sortedFeatured, ...discounted];
         }
 
-        if (sortedFeatured.length < 9) {
+        if (sortedFeatured.length < 12) {
           const premium = [...allVehicles]
             .sort((a, b) => b.basePrice - a.basePrice)
             .filter(v => !sortedFeatured.includes(v))
-            .slice(0, 9 - sortedFeatured.length);
+            .slice(0, 12 - sortedFeatured.length);
           sortedFeatured = [...sortedFeatured, ...premium];
         }
 
-        // 3. Sort POPULAR (Lowest price first, top 9)
+        // 3. Sort POPULAR (Increased to top 12)
         const sortedPopular = [...allVehicles]
           .sort((a, b) => a.basePrice - b.basePrice)
-          .slice(0, 9);
+          .slice(0, 12);
 
         setNewestVehicles(sortedNewest);
         setFeaturedVehicles(sortedFeatured);
@@ -117,7 +117,7 @@ function HomeContent() {
     <main className="flex flex-col items-center w-full">
       
       {/* ----------------------------------------- */}
-      {/* 1. MASSIVE HERO SECTION & SEARCH ENGINE (REDUCED HEIGHT BY 20%) */}
+      {/* 1. MASSIVE HERO SECTION & SEARCH ENGINE */}
       {/* ----------------------------------------- */}
       <section className="relative w-full bg-[#0a0a0a] text-white pt-24 pb-32 px-6 overflow-hidden border-b-4 border-[#003366] flex flex-col items-center justify-center">
         {/* Background Overlay */}
@@ -208,9 +208,9 @@ function HomeContent() {
       </section>
 
       {/* ----------------------------------------- */}
-      {/* 2. LIVE VEHICLE GRIDS */}
+      {/* 2. LIVE VEHICLE GRIDS (NOW 3 COLUMNS ON MOBILE) */}
       {/* ----------------------------------------- */}
-      <div className="w-full max-w-7xl px-4 flex flex-col gap-24 mt-16 mb-32">
+      <div className="w-full max-w-7xl px-2 md:px-6 flex flex-col gap-16 md:gap-24 mt-12 md:mt-16 mb-24 md:mb-32">
         
         {isLoading ? (
           <div className="w-full py-32 flex flex-col items-center justify-center gap-4">
@@ -222,11 +222,12 @@ function HomeContent() {
             {/* FEATURED VEHICLES */}
             {featuredVehicles.length > 0 && (
               <section>
-                <div className="flex justify-between items-end mb-8 border-b border-gray-200 pb-2">
-                  <h3 className="text-3xl font-black text-black tracking-tight">Featured Vehicles</h3>
-                  <a href="/cars" className="text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
+                <div className="flex justify-between items-end mb-4 md:mb-8 border-b border-gray-200 pb-2 px-2 md:px-0">
+                  <h3 className="text-xl md:text-3xl font-black text-black tracking-tight">Featured Vehicles</h3>
+                  <a href="/cars" className="text-[10px] md:text-base text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* UPGRADED GRID: 3 items on Mobile, 4 on Desktop */}
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-8">
                   {featuredVehicles.map(vehicle => <VehicleCard key={`feat-${vehicle.id}`} vehicle={vehicle} isFeatured />)}
                 </div>
               </section>
@@ -235,11 +236,12 @@ function HomeContent() {
             {/* NEWLY ADDED */}
             {newestVehicles.length > 0 && (
               <section>
-                <div className="flex justify-between items-end mb-8 border-b border-gray-200 pb-2">
-                  <h3 className="text-3xl font-black text-black tracking-tight">Newly Added</h3>
-                  <a href="/cars" className="text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
+                <div className="flex justify-between items-end mb-4 md:mb-8 border-b border-gray-200 pb-2 px-2 md:px-0">
+                  <h3 className="text-xl md:text-3xl font-black text-black tracking-tight">Newly Added</h3>
+                  <a href="/cars" className="text-[10px] md:text-base text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* UPGRADED GRID: 3 items on Mobile, 4 on Desktop */}
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-8">
                   {newestVehicles.map(vehicle => <VehicleCard key={`new-${vehicle.id}`} vehicle={vehicle} />)}
                 </div>
               </section>
@@ -248,11 +250,12 @@ function HomeContent() {
             {/* MOST POPULAR */}
             {popularVehicles.length > 0 && (
               <section>
-                <div className="flex justify-between items-end mb-8 border-b border-gray-200 pb-2">
-                  <h3 className="text-3xl font-black text-black tracking-tight">Most Popular</h3>
-                  <a href="/cars" className="text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
+                <div className="flex justify-between items-end mb-4 md:mb-8 border-b border-gray-200 pb-2 px-2 md:px-0">
+                  <h3 className="text-xl md:text-3xl font-black text-black tracking-tight">Most Popular</h3>
+                  <a href="/cars" className="text-[10px] md:text-base text-[#003366] font-bold hover:text-black transition">View Full Collection →</a>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* UPGRADED GRID: 3 items on Mobile, 4 on Desktop */}
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-8">
                   {popularVehicles.map(vehicle => <VehicleCard key={`pop-${vehicle.id}`} vehicle={vehicle} />)}
                 </div>
               </section>
@@ -266,7 +269,7 @@ function HomeContent() {
 }
 
 // -----------------------------------------
-// REUSABLE COMPONENT: UPGRADED VEHICLE CARD
+// REUSABLE COMPONENT: MOBILE MICRO-CARD
 // -----------------------------------------
 function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeatured?: boolean }) {
   const searchParams = useSearchParams();
@@ -296,48 +299,55 @@ function VehicleCard({ vehicle, isFeatured = false }: { vehicle: Vehicle, isFeat
   const isPaidFeature = vehicle.featuredUntil && new Date(vehicle.featuredUntil) > new Date();
 
   return (
-    <div className={`group bg-white border rounded overflow-hidden transition-all duration-300 flex flex-col ${isFeatured ? 'border-blue-200 shadow-md hover:shadow-xl' : 'border-gray-200 hover:border-[#003366] hover:shadow-lg'}`}>
+    <div className={`group bg-white rounded-lg md:rounded-xl border overflow-hidden transition-all duration-300 flex flex-col ${isFeatured ? 'border-blue-200 shadow-md hover:shadow-xl' : 'border-gray-200 hover:border-[#003366] hover:shadow-lg'}`}>
       
       {/* IMAGE CONTAINER */}
-      <div className="bg-gray-100 h-56 w-full flex items-center justify-center relative overflow-hidden">
+      <div className="bg-gray-100 aspect-[4/3] w-full flex items-center justify-center relative overflow-hidden">
         {vehicle.images && vehicle.images[0] ? (
           <img src={vehicle.images[0]} alt={vehicle.model} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
         ) : (
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">No Image</span>
+          <span className="text-[8px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">No Image</span>
         )}
 
         {/* Paid Featured Badge */}
         {isPaidFeature && (
-           <div className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-1 uppercase tracking-widest rounded shadow-md z-10 flex items-center gap-1">
-             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-             Featured
+           <div className="absolute top-1 right-1 md:top-3 md:right-3 bg-yellow-400 text-yellow-900 text-[8px] md:text-[10px] font-black px-1.5 py-0.5 md:px-2 md:py-1 uppercase tracking-widest rounded shadow-md z-10 flex items-center gap-1">
+             <svg className="w-2 h-2 md:w-3 md:h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+             <span className="hidden md:inline">Featured</span>
            </div>
         )}
 
         {/* Discount Badge */}
         {vehicle.discount && vehicle.discount.value > 0 && (
-          <div className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black px-2 py-1 uppercase tracking-widest rounded shadow-md z-10">
+          <div className="absolute top-1 left-1 md:top-3 md:left-3 bg-red-600 text-white text-[8px] md:text-[10px] font-black px-1.5 py-0.5 md:px-2 md:py-1 uppercase tracking-widest rounded shadow-md z-10">
             {vehicle.discount.type === 'percentage' ? `${vehicle.discount.value}% OFF` : `₹${vehicle.discount.value} OFF`}
           </div>
         )}
       </div>
       
-      <div className="p-6 flex-grow flex flex-col justify-between">
-        <div className="mb-6">
-          <div className="flex justify-between items-start mb-2">
+      <div className="p-2 md:p-6 flex-grow flex flex-col justify-between">
+        <div className="mb-2 md:mb-6">
+          <div className="hidden md:flex justify-between items-start mb-2">
             <div className="text-xs font-bold text-[#003366] uppercase tracking-wider">{vehicle.category}</div>
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">📍 {vehicle.outletLocation}</div>
           </div>
-          <h4 className="text-xl font-black text-black tracking-tight">{vehicle.brand} {vehicle.model}</h4>
+          <h4 className="text-[10px] md:text-xl font-black text-black tracking-tight truncate">{vehicle.brand} {vehicle.model}</h4>
+          
+          <div className="md:hidden text-[8px] font-bold text-gray-400 uppercase tracking-widest truncate mt-0.5">
+            📍 {vehicle.outletLocation}
+          </div>
         </div>
         
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-          <div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between pt-2 md:pt-4 border-t border-gray-100 gap-1 md:gap-0">
+          <div className="flex flex-col w-full md:w-auto">
             {/* DYNAMIC PRICING LABEL */}
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">{priceLabel}</p>
-            <span className="text-xl font-black text-black">₹{finalPrice}</span>
+            <p className="hidden md:block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">{priceLabel}</p>
+            <div className="flex items-end gap-1">
+               <span className="text-xs sm:text-sm md:text-xl font-black text-black leading-none">₹{finalPrice}</span>
+               <span className="text-[8px] font-bold text-gray-500 md:hidden">/d</span>
+            </div>
           </div>
-          <a href={smartBookLink} className="bg-[#003366] text-white text-sm font-bold px-6 py-3 rounded hover:bg-black transition shadow-sm">
+          <a href={smartBookLink} className="w-full md:w-auto text-center bg-[#003366] text-white text-[8px] md:text-sm font-bold px-2 py-1.5 md:px-6 md:py-3 rounded hover:bg-black transition shadow-sm">
             Book
           </a>
         </div>

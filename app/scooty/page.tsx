@@ -88,17 +88,17 @@ function ScootyContent() {
   }, [searchCity, searchPickup, searchDropoff]);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col min-h-[60vh]">
+    <div className="max-w-7xl mx-auto px-2 md:px-6 py-8 md:py-12 flex flex-col min-h-[60vh]">
       
       {/* Dynamic Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-[#003366] uppercase mb-2">
+      <div className="mb-6 md:mb-10 px-2 md:px-0">
+        <h1 className="text-2xl md:text-4xl font-black text-[#003366] uppercase mb-2">
           {searchCity ? `Available Scootys in ${searchCity}` : "All Premium Scootys"}
         </h1>
         {searchPickup && searchDropoff && (
-          <div className="bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg inline-flex items-center gap-4 text-xs font-bold text-[#003366] mt-2">
+          <div className="bg-blue-50 border border-blue-100 px-3 md:px-4 py-1.5 md:py-2 rounded-lg inline-flex items-center gap-3 md:gap-4 text-[10px] md:text-xs font-bold text-[#003366] mt-2">
             <span>📅 Search Active</span>
-            <a href="/scooty" className="text-red-500 hover:text-red-700 border-l border-blue-200 pl-4 transition">Clear Filters &times;</a>
+            <a href="/scooty" className="text-red-500 hover:text-red-700 border-l border-blue-200 pl-3 md:pl-4 transition">Clear &times;</a>
           </div>
         )}
       </div>
@@ -110,18 +110,18 @@ function ScootyContent() {
            <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Loading live fleet...</p>
         </div>
       ) : scootys.length === 0 ? (
-        <div className="bg-gray-100 p-8 text-center rounded-lg border-2 border-dashed border-gray-300">
-          <h3 className="text-xl font-bold text-gray-800 mb-2">No scootys found!</h3>
-          <p className="text-gray-500 text-sm max-w-md mx-auto">
+        <div className="bg-gray-100 p-6 md:p-8 text-center rounded-lg border-2 border-dashed border-gray-300 mx-2 md:mx-0">
+          <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No scootys found!</h3>
+          <p className="text-gray-500 text-xs md:text-sm max-w-md mx-auto">
             Sorry, we currently do not have any scootys available for those dates in {searchCity || "this area"}. Try changing your dates or location!
           </p>
-          <a href="/scooty" className="mt-4 inline-block text-white bg-[#003366] px-6 py-3 rounded font-bold hover:bg-black transition shadow-sm">
+          <a href="/scooty" className="mt-4 inline-block text-white bg-[#003366] px-6 py-3 rounded text-xs md:text-sm font-bold hover:bg-black transition shadow-sm">
             View All Scootys
           </a>
         </div>
       ) : (
-        /* Grid of Filtered Scootys */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        /* --- THE MAGIC MOBILE 3-COL GRID --- */
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-8">
           {scootys.map((scooty) => (
             <ScootyCard 
               key={scooty.id} 
@@ -137,7 +137,7 @@ function ScootyContent() {
 }
 
 // -----------------------------------------
-// REUSABLE COMPONENT: INDIVIDUAL SCOOTY CARD (WITH IMAGE SLIDER)
+// REUSABLE COMPONENT: INDIVIDUAL SCOOTY CARD (MOBILE OPTIMIZED)
 // -----------------------------------------
 function ScootyCard({ scooty, searchPickup, searchDropoff }: { scooty: Scooty, searchPickup: string, searchDropoff: string }) {
   // State for the Image Slider
@@ -169,7 +169,7 @@ function ScootyCard({ scooty, searchPickup, searchDropoff }: { scooty: Scooty, s
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition flex flex-col group">
+    <div className="bg-white rounded-lg md:rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition duration-300 group flex flex-col">
       
       {/* IMAGE CONTAINER WITH SLIDER & DISCOUNT BADGE */}
       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
@@ -186,62 +186,72 @@ function ScootyCard({ scooty, searchPickup, searchDropoff }: { scooty: Scooty, s
               <>
                 <button 
                   onClick={prevImg} 
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black transition opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                  className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 w-4 h-4 md:w-8 md:h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black transition opacity-0 group-hover:opacity-100 backdrop-blur-sm text-[8px] md:text-sm"
                 >
                   &#10094;
                 </button>
                 <button 
                   onClick={nextImg} 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black transition opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                  className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 w-4 h-4 md:w-8 md:h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black transition opacity-0 group-hover:opacity-100 backdrop-blur-sm text-[8px] md:text-sm"
                 >
                   &#10095;
                 </button>
                 {/* Image Counter Badge */}
-                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm">
+                <div className="absolute bottom-1 right-1 md:bottom-2 md:right-2 bg-black/60 text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
                   {imgIndex + 1} / {scooty.images.length}
                 </div>
               </>
             )}
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">NO IMAGE</div>
+          <div className="w-full h-full flex items-center justify-center text-[8px] md:text-xs font-bold text-gray-400">NO IMG</div>
         )}
         
         {scooty.discount && scooty.discount.value > 0 && (
-          <div className="absolute top-4 left-4 bg-black text-white text-[10px] font-black px-3 py-1.5 uppercase tracking-widest rounded shadow-md z-10">
+          <div className="absolute top-1 left-1 md:top-4 md:left-4 bg-black text-white text-[8px] md:text-[10px] font-black px-1.5 py-0.5 md:px-3 md:py-1.5 uppercase tracking-widest rounded shadow-md z-10">
             {scooty.discount.type === 'percentage' ? `${scooty.discount.value}% OFF` : `₹${scooty.discount.value} OFF`}
           </div>
         )}
       </div>
 
-      <div className="p-6 flex flex-col flex-grow">
+      {/* SCOOTY DETAILS */}
+      <div className="p-2 md:p-6 flex flex-col flex-grow">
         
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <h3 className="text-xl font-bold text-black">{scooty.brand} {scooty.model}</h3>
-            <p className="text-xs font-bold text-gray-400 uppercase">By {scooty.vendorId || "Verified Vendor"}</p>
+        <div className="flex flex-col mb-2 md:mb-4">
+          <div className="hidden md:flex justify-between items-start mb-2">
+            <div className="text-xs font-bold text-[#003366] uppercase tracking-wider">Scooty</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">📍 {scooty.outletLocation}</div>
           </div>
-          <div className="text-right flex flex-col items-end">
-            <span className="text-xl font-black text-[#003366]">₹{finalPrice}</span>
+          
+          <h3 className="text-[10px] md:text-xl font-black text-black leading-tight md:mt-1 truncate">
+            {scooty.brand} {scooty.model}
+          </h3>
+          
+          <div className="md:hidden text-[8px] font-bold text-gray-400 uppercase tracking-widest truncate mt-0.5">
+            📍 {scooty.outletLocation}
+          </div>
+        </div>
+
+        <div className="mt-auto pt-2 md:pt-6 border-t border-gray-100 flex flex-col md:flex-row items-start md:items-end justify-between gap-1 md:gap-0">
+          <div className="flex flex-col w-full md:w-auto">
+            <span className="hidden md:block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Starting At</span>
+            <div className="flex items-end gap-1 md:gap-2">
+              <span className="text-sm md:text-2xl font-black text-[#003366] leading-none">₹{finalPrice}</span>
+              <span className="text-[8px] md:text-xs font-bold text-gray-500 md:mb-1">/d</span>
+            </div>
             {scooty.discount && scooty.discount.value > 0 && (
-              <span className="text-[10px] text-gray-400 line-through font-bold">₹{scooty.basePrice}</span>
+              <span className="hidden md:block text-xs text-gray-400 line-through font-bold mt-1">₹{scooty.basePrice}</span>
             )}
-            <span className="text-xs text-gray-500 block">/ day</span>
           </div>
-        </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-500 font-medium my-4">
-          <span className="flex items-center gap-1">📍 {scooty.outletLocation}</span>
-          <span className="flex items-center gap-1">🛵 {scooty.category}</span>
+          {/* The Magic Booking Link -> Passes exact search parameters straight to the checkout! */}
+          <Link 
+            href={`/book?car=${encodeURIComponent(scooty.brand + " " + scooty.model)}&price=${finalPrice}&city=${encodeURIComponent(scooty.outletLocation)}&pickup=${searchPickup}&dropoff=${searchDropoff}`}
+            className="w-full md:w-auto text-center bg-[#003366] text-white text-[8px] md:text-xs font-black uppercase tracking-widest px-2 py-1.5 md:px-6 md:py-3 rounded hover:bg-black transition shadow-md"
+          >
+            Book
+          </Link>
         </div>
-
-        {/* The Magic Booking Link -> Passes exact search parameters straight to the checkout! */}
-        <Link 
-          href={`/book?car=${encodeURIComponent(scooty.brand + " " + scooty.model)}&price=${finalPrice}&city=${encodeURIComponent(scooty.outletLocation)}&pickup=${searchPickup}&dropoff=${searchDropoff}`}
-          className="mt-auto block w-full text-center bg-[#003366] text-white py-3 rounded font-bold hover:bg-black transition shadow-sm"
-        >
-          Book This Scooty
-        </Link>
 
       </div>
     </div>
