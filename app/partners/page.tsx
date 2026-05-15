@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db, storage } from "../firebase/config"; 
+import { useRouter } from "next/navigation";
+import { db, storage, auth } from "../firebase/config"; 
 import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { onAuthStateChanged } from "firebase/auth";
 
 const NAGALAND_CITIES = [
   "Dimapur", "Kohima", "Mokokchung", "Tuensang", "Wokha", "Zunheboto", 
@@ -64,6 +66,11 @@ interface Booking {
 }
 
 export default function PartnersDashboard() {
+  const router = useRouter();
+  
+  // --- NEW: AUTHENTICATION GATEKEEPER STATE ---
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
   const [activeTab, setActiveTab] = useState("overview");
 
   // --- FIREBASE STATES ---
@@ -105,6 +112,40 @@ export default function PartnersDashboard() {
   const [verifyingBooking, setVerifyingBooking] = useState<Booking | null>(null);
   const [isSubmittingVerify, setIsSubmittingVerify] = useState(false);
 
+  // ==========================================
+  // NEW: THE GATEKEEPER SECURITY CHECK
+  // ==========================================
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // Not logged in? Kick them to the login page immediately.
+        router.push("/login"); 
+      } else {
+        try {
+          // Check if this specific user has a Vendor Profile in the database
+          const vendorRef = doc(db, "vendors", user.uid);
+          const vendorSnap = await getDoc(vendorRef);
+
+          if (!vendorSnap.exists()) {
+            // They are logged in, but they are a CUSTOMER!
+            alert("Access Denied: You are logged in with a Customer account. You must use a registered Vendor account to access this dashboard.");
+            await auth.signOut();
+            router.push("/login");
+          } else {
+            // They are a verified vendor! Open the gates.
+            setIsAuthChecking(false);
+            fetchDashboardData(); // Load their data
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          router.push("/login");
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
@@ -135,10 +176,6 @@ export default function PartnersDashboard() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
 
   const handleSaveSettings = async (e: React.FormEvent) => { 
     e.preventDefault(); 
@@ -175,7 +212,6 @@ export default function PartnersDashboard() {
   const handleFeatureSubmit = async () => { if (!featuringVehicle || !featureScreenshot) return; setIsSubmittingFeature(true); try { const imageRef = ref(storage, `feature_payments/${featuringVehicle.id}_${Date.now()}_${featureScreenshot.name}`); await uploadBytes(imageRef, featureScreenshot); const downloadUrl = await getDownloadURL(imageRef); const featureData = { status: "pending", days: featureDays, amount: featureDays * FEATURE_RATE_PER_DAY, screenshotUrl: downloadUrl, submittedAt: new Date().toISOString() }; await updateDoc(doc(db, "vehicles", featuringVehicle.id), { featureRequest: featureData }); setMyVehicles(prev => prev.map(v => v.id === featuringVehicle.id ? { ...v, featureRequest: featureData } : v)); setFeaturingVehicle(null); setShowAdminPaymentModal(false); setFeatureDays(1); setFeatureScreenshot(null); alert(`Success! Your feature request and payment screenshot for ${featuringVehicle.model} have been sent to the Admin for approval.`); } catch (error) { alert("Failed to submit feature request. Please try again."); } finally { setIsSubmittingFeature(false); } };
   const handleCopyAdminUpi = () => { navigator.clipboard.writeText(ADMIN_UPI_ID); setCopiedAdminUpi(true); setTimeout(() => setCopiedAdminUpi(false), 2000); };
 
-  // --- INCOMING CUSTOMER REQUESTS ---
   const handleAcceptCancel = async (booking: Booking) => {
     const isConfirmed = window.confirm("Are you sure you want to accept this cancellation?");
     if (!isConfirmed) return;
@@ -230,7 +266,6 @@ export default function PartnersDashboard() {
     setShowRejectModal(true);
   };
 
-  // --- CONFIRM BOOKING FUNCTION WITH WHATSAPP ---
   const handleConfirmBooking = async () => {
     if (!verifyingBooking) return;
     setIsSubmittingVerify(true);
@@ -264,7 +299,11 @@ export default function PartnersDashboard() {
     }
   };
 
-  // --- LIVE MATH ENGINE FOR EARNINGS ---
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push("/login");
+  };
+
   let totalGrossRevenue = 0;
   let totalVendorNet = 0;
   let totalPlatformShare = 0;
@@ -289,14 +328,22 @@ export default function PartnersDashboard() {
     return new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
 
-  // Categorize Bookings
   const actionRequiredBookings = vendorBookings.filter(b => b.cancellationRequested || b.changeRequested || b.status === "pending_verification");
   const normalBookings = vendorBookings.filter(b => !b.cancellationRequested && !b.changeRequested && b.status !== "pending_verification" && b.status !== "cancelled" && b.status !== "rejected");
+
+  // --- THE SECURE LOADING SCREEN ---
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-[#003366] rounded-full animate-spin"></div>
+        <p className="text-[#003366] font-black tracking-widest mt-4 uppercase text-xs">Verifying Vendor Credentials...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 text-black font-sans flex flex-col relative overflow-x-hidden">
       
-      {/* --- RESPONSIVE HEADER --- */}
       <header className="sticky top-0 z-40 bg-[#003366] border-b border-gray-800 shadow-sm text-white">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 py-4 max-w-7xl mx-auto gap-4">
           <div className="flex items-center justify-between w-full md:w-auto">
@@ -307,7 +354,6 @@ export default function PartnersDashboard() {
             </a>
           </div>
           
-          {/* Scrollable Navigation on Mobile */}
           <div className="flex items-center space-x-4 md:space-x-6 text-sm font-bold w-full overflow-x-auto pb-2 md:pb-0 snap-x hide-scrollbar">
             <button onClick={() => setActiveTab("overview")} className={`snap-start whitespace-nowrap transition ${activeTab === 'overview' ? 'text-blue-200' : 'hover:text-blue-300'}`}>Dashboard</button>
             <button onClick={() => setActiveTab("bookings")} className={`snap-start whitespace-nowrap transition ${activeTab === 'bookings' ? 'text-blue-200' : 'hover:text-blue-300'} relative`}>
@@ -317,12 +363,11 @@ export default function PartnersDashboard() {
             <button onClick={() => setActiveTab("fleet")} className={`snap-start whitespace-nowrap transition ${activeTab === 'fleet' ? 'text-blue-200' : 'hover:text-blue-300'}`}>My Fleet</button>
             <button onClick={() => setActiveTab("earnings")} className={`snap-start whitespace-nowrap transition ${activeTab === 'earnings' ? 'text-blue-200' : 'hover:text-blue-300'}`}>Earnings</button>
             <button onClick={() => setActiveTab("terms")} className={`snap-start whitespace-nowrap transition ${activeTab === 'terms' ? 'text-blue-200' : 'hover:text-blue-300'}`}>Profile & Settings</button>
-            <button className="snap-start whitespace-nowrap bg-white text-[#003366] px-4 py-1.5 rounded hover:bg-black hover:text-white transition">Log Out</button>
+            <button onClick={handleLogout} className="snap-start whitespace-nowrap bg-white text-[#003366] px-4 py-1.5 rounded hover:bg-black hover:text-white transition">Log Out</button>
           </div>
         </div>
       </header>
 
-      {/* --- MAIN DASHBOARD BODY --- */}
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 gap-4">
@@ -350,7 +395,6 @@ export default function PartnersDashboard() {
           <StatCard title="Net Earnings" value={`₹${totalVendorNet.toLocaleString()}`} subtitle="After commission splits" onClick={() => setActiveTab("earnings")} isActive={activeTab === "earnings"} />
         </div>
 
-        {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div className="text-center py-16 sm:py-20 bg-white rounded-lg border border-gray-200 px-4">
             <h3 className="text-lg sm:text-xl font-black text-[#003366] mb-2">Dashboard Overview</h3>
@@ -358,11 +402,9 @@ export default function PartnersDashboard() {
           </div>
         )}
 
-        {/* --- BOOKINGS & REQUESTS TAB --- */}
         {activeTab === "bookings" && (
           <div className="flex flex-col gap-6 sm:gap-8">
             
-            {/* SECTION: ACTION REQUIRED */}
             {actionRequiredBookings.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 overflow-hidden">
                 <div className="bg-red-50 text-red-800 p-4 border-b border-red-200 flex justify-between items-center">
@@ -380,7 +422,6 @@ export default function PartnersDashboard() {
                         <span className="font-black text-[#003366] text-xl sm:text-2xl">₹{booking.totalPaid.toLocaleString()}</span>
                       </div>
 
-                      {/* 1. NEW BOOKING */}
                       {booking.status === "pending_verification" && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-5 mb-4">
                           <p className="text-[10px] font-black text-[#003366] uppercase tracking-widest mb-2">New Booking Request</p>
@@ -391,7 +432,6 @@ export default function PartnersDashboard() {
                         </div>
                       )}
 
-                      {/* 2. CANCELLATION REQUEST */}
                       {booking.cancellationRequested && (
                         <div className="bg-red-100 border border-red-200 rounded-lg p-4 mb-4">
                           <p className="text-[10px] font-black text-red-800 uppercase tracking-widest mb-1">Cancellation Requested</p>
@@ -408,7 +448,6 @@ export default function PartnersDashboard() {
                         </div>
                       )}
 
-                      {/* 3. CHANGE REQUEST */}
                       {booking.changeRequested && (
                         <div className="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-4">
                           <p className="text-[10px] font-black text-blue-800 uppercase tracking-widest mb-1">Date Change Requested</p>
@@ -435,7 +474,6 @@ export default function PartnersDashboard() {
               </div>
             )}
 
-            {/* SECTION: ALL CONFIRMED BOOKINGS */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="bg-gray-800 text-white p-4">
                 <h3 className="font-black text-lg">Confirmed Bookings Queue</h3>
@@ -481,7 +519,6 @@ export default function PartnersDashboard() {
           </div>
         )}
 
-        {/* EARNINGS TAB */}
         {activeTab === "earnings" && (
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
@@ -541,7 +578,6 @@ export default function PartnersDashboard() {
           </div>
         )}
 
-        {/* PROFILE & SETTINGS TAB */}
         {activeTab === "terms" && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="bg-gray-800 text-white p-4">
@@ -594,7 +630,6 @@ export default function PartnersDashboard() {
           </div>
         )}
 
-        {/* TOTAL FLEET TAB */}
         {activeTab === "fleet" && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="bg-gray-800 text-white p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
