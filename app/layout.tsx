@@ -42,12 +42,13 @@ export default function RootLayout({
                 {/* PREMIUM DROPDOWN MENU */}
                 <div className="absolute right-0 top-full pt-4 w-64 hidden group-hover:block z-50 transition-opacity duration-300">
                   <div className="bg-white border border-gray-100 shadow-2xl rounded-xl flex flex-col text-left overflow-hidden">
+                    
                     <div className="px-6 py-3 bg-gray-50/50">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fleet Categories</span>
                     </div>
+                    {/* --- UPDATED FLEET LINKS --- */}
                     <a href="/cars" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Cars</a>
-                    <a href="/bikes" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Bikes</a>
-                    <a href="/scooty" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Scooty</a>
+                    <a href="/bikes" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Two Wheelers</a>
                     <a href="/trucks" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-100">Trucks</a>
 
                     <div className="px-6 py-3 bg-gray-50/50">
@@ -86,7 +87,7 @@ export default function RootLayout({
                   <span className="text-4xl font-black tracking-widest text-white block mb-6 hover:opacity-80 transition duration-300">CarXone</span>
                 </a>
                 <p className="text-gray-400 text-sm font-medium leading-relaxed mb-8">
-                  Together with our trusted partners we are here to fulfil your needs. Drive the cars, scooties and bikes of your choice.
+                  Together with our trusted partners we are here to fulfil your needs. Drive the cars, two wheelers and trucks of your choice.
                 </p>
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center hover:bg-green-600 hover:border-green-600 cursor-pointer transition duration-300">

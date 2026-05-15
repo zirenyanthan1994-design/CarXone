@@ -24,7 +24,7 @@ function CarsContent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // --- NEW: QUICK VIEW MODAL STATE ---
+  // --- QUICK VIEW MODAL STATE ---
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   // Catch the data sent from the Homepage search bar
@@ -85,35 +85,25 @@ function CarsContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col w-full relative">
-      
-      {/* --- HERO SECTION --- */}
-      <section className="bg-[#0a0a0a] text-white py-12 md:py-20 px-4 md:px-6 border-b-4 border-green-600">
-        <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-          <span className="text-green-500 font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mb-2 md:mb-4">Premium Fleet</span>
-          <h1 className="text-3xl md:text-6xl font-black uppercase tracking-tight mb-4 md:mb-6">
-            Rent the Perfect Car.
-          </h1>
-          <p className="text-gray-400 font-medium max-w-2xl text-xs md:text-base leading-relaxed mb-6">
-            Browse our curated selection of verified, well-maintained cars. Available instantly across Nagaland. No hidden fees.
-          </p>
-          
-          {/* Show the user their active search filters */}
-          {(searchCity || searchPickup) && (
-            <div className="bg-white/10 border border-white/20 px-4 md:px-6 py-2 md:py-3 rounded-full flex flex-wrap justify-center items-center gap-3 md:gap-4 text-[10px] md:text-xs font-bold uppercase tracking-widest text-green-400">
-              {searchCity && <span>📍 {searchCity}</span>}
-              {searchPickup && <span>📅 Search Active</span>}
-              <a href="/cars" className="text-white hover:text-red-400 ml-2 border-l border-white/20 pl-4 transition">Clear &times;</a>
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* --- LIVE CATALOG SECTION --- */}
-      <main className="flex-grow max-w-7xl mx-auto w-full px-2 md:px-6 py-8 md:py-16">
+      <main className="flex-grow max-w-7xl mx-auto w-full px-2 md:px-6 py-8 md:py-12">
         
-        <div className="flex justify-between items-end border-b border-gray-200 pb-2 md:pb-4 mb-6 md:mb-10 px-2 md:px-0">
-          <h2 className="text-xl md:text-2xl font-black text-black">Available Cars ({vehicles.length})</h2>
-          <div className="hidden md:block text-xs font-bold text-gray-500 uppercase tracking-widest">Sort by: Lowest Price</div>
+        {/* Dynamic Search Indicator / Header */}
+        <div className="flex flex-col md:flex-row justify-between md:items-end border-b border-gray-200 pb-2 md:pb-4 mb-6 md:mb-10 px-2 md:px-0 gap-2">
+          <h2 className="text-xl md:text-2xl font-black text-black">
+            {searchCity ? `Available Cars in ${searchCity}` : "All Available Cars"} ({vehicles.length})
+          </h2>
+          
+          <div className="flex items-center gap-4">
+             {searchPickup && searchDropoff && (
+                <div className="bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg flex items-center gap-2 text-[10px] md:text-xs font-bold text-[#003366]">
+                  <span>📅 Search Active</span>
+                  <a href="/cars" className="text-red-500 hover:text-red-700 border-l border-blue-200 pl-2 transition">Clear &times;</a>
+                </div>
+             )}
+            <div className="hidden md:block text-xs font-bold text-gray-500 uppercase tracking-widest">Sort by: Lowest Price</div>
+          </div>
         </div>
 
         {isLoading ? (
@@ -266,7 +256,6 @@ function CarCard({ vehicle, searchPickup, searchDropoff, onOpenDetails }: { vehi
 
         <div className="mt-auto pt-2 md:pt-6 border-t border-gray-100 flex flex-col md:flex-row items-start md:items-end justify-between gap-1 md:gap-0">
           <div className="flex flex-col w-full md:w-auto">
-            {/* UPGRADE: Removed "hidden md:block" so pricing rules display clearly on mobile! */}
             <p className="text-[7px] leading-tight md:text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">{priceLabel}</p>
             <div className="flex items-end gap-1 md:gap-2">
               <span className="text-sm md:text-2xl font-black text-green-600 leading-none">₹{finalPrice}</span>
