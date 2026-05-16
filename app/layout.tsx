@@ -27,7 +27,6 @@ export default function RootLayout({
               
               <div className="flex items-center space-x-4">
                 <a href="/">
-                  {/* --- HEADER KEEPS THE LARGE IMAGE LOGO --- */}
                   <img src="/logo.png" alt="CarXone Logo" className="h-16 md:h-20 w-auto object-contain cursor-pointer hover:opacity-70 transition duration-300" />
                 </a>
               </div>
@@ -46,7 +45,6 @@ export default function RootLayout({
                     <div className="px-6 py-3 bg-gray-50/50">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fleet Categories</span>
                     </div>
-                    {/* --- UPDATED FLEET LINKS --- */}
                     <a href="/cars" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Cars</a>
                     <a href="/bikes" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Two Wheelers</a>
                     <a href="/trucks" className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-100">Trucks</a>
@@ -83,7 +81,6 @@ export default function RootLayout({
               
               <div className="text-left max-w-sm">
                 <a href="/">
-                  {/* --- FOOTER NOW USES CLEAN WHITE TEXT --- */}
                   <span className="text-4xl font-black tracking-widest text-white block mb-6 hover:opacity-80 transition duration-300">CarXone</span>
                 </a>
                 <p className="text-gray-400 text-sm font-medium leading-relaxed mb-8">
@@ -104,12 +101,13 @@ export default function RootLayout({
                   <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Company</span>
                   <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">About Us</a>
                   <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Contact Support</a>
-                  <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Partner Network</a>
+                  <a href="/partners/signup" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Partner Network</a>
                 </div>
                 <div className="flex flex-col gap-5">
                   <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Legal</span>
-                  <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Terms & Conditions</a>
-                  <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Privacy Policy</a>
+                  {/* --- NEW: WIRED UP THE LEGAL LINKS HERE --- */}
+                  <a href="/terms" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Terms & Conditions</a>
+                  <a href="/privacy" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Privacy Policy</a>
                   <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Refund Rules</a>
                 </div>
               </div>
