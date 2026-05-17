@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "../firebase/config"; 
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { collection, query, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 
 interface Booking {
   id: string;
@@ -27,15 +27,27 @@ interface Booking {
   cancellationReason?: string;
   changeRequested?: boolean;
   changeMessage?: string;
-  newPickupDate?: string; // NEW: Added to track date changes
-  newDropoffDate?: string; // NEW: Added to track date changes
-  vendorRemark?: string;  // NEW: The message from the vendor
+  newPickupDate?: string; 
+  newDropoffDate?: string; 
+  vendorRemark?: string;  
 }
 
-export default function CustomerProfile() {
+// --- NEW: Profile Data Interface ---
+interface UserProfile {
+  fullName: string;
+  phone: string;
+  address: string;
+}
+
+function CustomerProfileContent() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // --- PROFILE STATES (NEW) ---
+  const [profileData, setProfileData] = useState<UserProfile>({ fullName: "", phone: "", address: "" });
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // --- BOOKING STATES ---
   const [activeBookings, setActiveBookings] = useState<Booking[]>([]);
@@ -62,7 +74,8 @@ export default function CustomerProfile() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser); 
-        fetchUserBookings(currentUser.email); 
+        fetchUserProfile(currentUser.uid); // Load their personal details
+        fetchUserBookings(currentUser.email); // Load ONLY their bookings
       } else {
         router.push("/login"); 
       }
@@ -72,11 +85,28 @@ export default function CustomerProfile() {
     return () => unsubscribe();
   }, [router]);
 
-  // --- FETCH BOOKINGS ---
+  // --- NEW: FETCH PROFILE DETAILS ---
+  const fetchUserProfile = async (uid: string) => {
+    try {
+      const snap = await getDoc(doc(db, "customers", uid));
+      if (snap.exists()) {
+        setProfileData(snap.data() as UserProfile);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
+  // --- UPGRADED: FETCH ISOLATED BOOKINGS ---
   const fetchUserBookings = async (userEmail: string | null) => {
+    if (!userEmail) return;
     setIsLoadingBookings(true);
     try {
-      const q = query(collection(db, "bookings"));
+      // THE FIX: The query now explicitly filters for ONLY this exact user!
+      const q = query(
+        collection(db, "bookings"), 
+        where("customerName", "==", userEmail)
+      );
       const querySnapshot = await getDocs(q);
       
       const now = new Date();
@@ -87,9 +117,6 @@ export default function CustomerProfile() {
       querySnapshot.forEach((doc) => {
         const data = { id: doc.id, ...doc.data() } as Booking;
         
-        // Optional: Filter by logged in user here when auth is fully linked
-        // if(data.customerName !== userEmail) return;
-
         const pickup = new Date(data.pickupDate);
         const dropoff = new Date(data.dropoffDate);
 
@@ -110,6 +137,22 @@ export default function CustomerProfile() {
       console.error("Error fetching bookings:", error);
     } finally {
       setIsLoadingBookings(false);
+    }
+  };
+
+  // --- NEW: SAVE EDITABLE PROFILE ---
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setIsSavingProfile(true);
+    try {
+      await setDoc(doc(db, "customers", user.uid), profileData, { merge: true });
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      alert("Failed to save profile. Please try again.");
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -145,7 +188,7 @@ export default function CustomerProfile() {
     }
   };
 
-  // --- UPDATED: HANDLE CHANGE REQUEST SUBMIT ---
+  // --- HANDLE CHANGE REQUEST SUBMIT ---
   const handleChangeSubmit = async () => {
     if (!actionBooking) return;
     setIsSubmitting(true);
@@ -175,7 +218,6 @@ export default function CustomerProfile() {
     }
   };
 
-  // --- HELPER TO OPEN CHANGE MODAL WITH PRE-FILLED DATES ---
   const openChangeModal = (booking: Booking) => {
     setActionBooking(booking);
     setNewPickupDate(booking.pickupDate);
@@ -204,23 +246,71 @@ export default function CustomerProfile() {
       {/* LEFT COLUMN: PERSONAL DETAILS & KYC */}
       {/* ----------------------------------------- */}
       <div className="w-full lg:w-1/3 flex flex-col gap-8">
-        <div className="bg-white p-8 border border-gray-200 flex flex-col items-center shadow-sm rounded-xl">
-          <div className="w-24 h-24 bg-[#003366] text-white rounded-full flex items-center justify-center text-3xl font-black mb-6 uppercase shadow-md">
-            {user?.email ? user.email[0] : 'U'}
-          </div>
-          <h2 className="text-2xl font-black text-black tracking-tight">{user?.email?.split('@')[0]}</h2>
-          <p className="text-[10px] font-bold text-gray-400 mt-1 mb-8 uppercase tracking-widest">{user?.email}</p>
+        
+        {/* UPGRADED EDITABLE PROFILE CARD */}
+        <div className="bg-white p-8 border border-gray-200 flex flex-col shadow-sm rounded-xl relative">
           
-          <div className="w-full flex flex-col gap-3">
-            <button className="text-[11px] font-bold text-white bg-black uppercase tracking-widest px-6 py-4 rounded-lg hover:bg-[#003366] transition w-full shadow-sm">
-              Edit Profile
-            </button>
-            <button onClick={handleLogout} className="text-[11px] font-bold text-black border-2 border-gray-200 rounded-lg uppercase tracking-widest px-6 py-4 hover:border-black transition w-full">
-              Sign Out
+          <div className="flex justify-between items-start mb-6">
+             <div className="w-16 h-16 bg-[#003366] text-white rounded-full flex items-center justify-center text-2xl font-black uppercase shadow-md">
+               {profileData.fullName ? profileData.fullName.charAt(0) : user?.email?.charAt(0)}
+             </div>
+             {!isEditingProfile && (
+               <button 
+                 onClick={() => setIsEditingProfile(true)}
+                 className="text-[10px] font-bold text-gray-500 hover:text-[#003366] uppercase tracking-widest transition"
+               >
+                 ✏️ Edit
+               </button>
+             )}
+          </div>
+
+          <h2 className="text-xl font-black text-black tracking-tight truncate">{user?.email}</h2>
+          <p className="text-[10px] font-bold text-gray-400 mt-1 mb-6 uppercase tracking-widest">Account ID</p>
+          
+          {isEditingProfile ? (
+            <form onSubmit={handleSaveProfile} className="flex flex-col gap-4 w-full animate-in fade-in duration-300">
+               <div>
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                 <input type="text" required value={profileData.fullName} onChange={(e) => setProfileData({...profileData, fullName: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none" />
+               </div>
+               <div>
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Phone Number</label>
+                 <input type="tel" required value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none" />
+               </div>
+               <div>
+                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Address</label>
+                 <textarea rows={2} value={profileData.address} onChange={(e) => setProfileData({...profileData, address: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none resize-none" />
+               </div>
+               <div className="flex gap-2 mt-2">
+                  <button type="button" onClick={() => setIsEditingProfile(false)} className="w-1/2 bg-gray-100 text-gray-600 text-xs font-bold py-2.5 rounded hover:bg-gray-200 transition">Cancel</button>
+                  <button type="submit" disabled={isSavingProfile} className="w-1/2 bg-[#003366] text-white text-xs font-bold py-2.5 rounded hover:bg-black transition">{isSavingProfile ? "Saving..." : "Save"}</button>
+               </div>
+            </form>
+          ) : (
+            <div className="flex flex-col gap-4 w-full animate-in fade-in duration-300">
+               <div>
+                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Full Name</p>
+                 <p className="text-sm font-bold text-black">{profileData.fullName || <span className="text-gray-300 italic">Not set</span>}</p>
+               </div>
+               <div>
+                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Phone Number</p>
+                 <p className="text-sm font-bold text-black">{profileData.phone || <span className="text-gray-300 italic">Not set</span>}</p>
+               </div>
+               <div>
+                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Address</p>
+                 <p className="text-sm font-bold text-black">{profileData.address || <span className="text-gray-300 italic">Not set</span>}</p>
+               </div>
+            </div>
+          )}
+
+          <div className="w-full mt-8 border-t border-gray-100 pt-6">
+            <button onClick={handleLogout} className="text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-lg uppercase tracking-widest px-6 py-3.5 transition w-full">
+              Secure Sign Out
             </button>
           </div>
         </div>
 
+        {/* Original Document Vault Maintained */}
         <div className="bg-white p-8 border border-gray-200 shadow-sm rounded-xl">
           <h3 className="text-xs font-black text-black uppercase tracking-widest border-b border-gray-100 pb-4 mb-6">Document Vault</h3>
           <div className="flex flex-col gap-4">
@@ -279,6 +369,17 @@ export default function CustomerProfile() {
                   <div className="flex flex-col gap-4">
                     {pastBookings.map(booking => <PastBookingCard key={booking.id} booking={booking} />)}
                   </div>
+                </div>
+              )}
+
+              {activeBookings.length === 0 && upcomingBookings.length === 0 && pastBookings.length === 0 && (
+                <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                   <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                   <h3 className="text-lg font-black text-black mb-2">No Bookings Yet</h3>
+                   <p className="text-sm text-gray-500 mb-6">You haven't rented any vehicles with us yet.</p>
+                   <a href="/cars" className="bg-black text-white px-6 py-3 rounded-lg font-black text-xs uppercase tracking-widest hover:bg-[#003366] transition shadow-md inline-block">
+                     Browse Fleet
+                   </a>
                 </div>
               )}
             </>
@@ -405,7 +506,7 @@ export default function CustomerProfile() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-4">
           <div className="flex items-center gap-5">
             <div className="w-16 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-[8px] font-black uppercase tracking-widest border border-gray-200">
-              CAR
+              VEHICLE
             </div>
             <div>
               <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{booking.vendorName}</div>
@@ -457,7 +558,7 @@ export default function CustomerProfile() {
           </div>
         </div>
 
-        {/* --- NEW: THE VENDOR REMARK DISPLAY --- */}
+        {/* --- VENDOR REMARK DISPLAY --- */}
         {booking.vendorRemark && (
           <div className={`p-4 rounded-lg mt-2 ${isRejected || isCancelled ? 'bg-red-50 border border-red-100' : 'bg-blue-50 border border-blue-100'}`}>
             <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isRejected || isCancelled ? 'text-red-800' : 'text-[#003366]'}`}>Message from Vendor</p>
@@ -514,4 +615,12 @@ export default function CustomerProfile() {
       </div>
     );
   }
+}
+
+export default function CustomerProfile() {
+  return (
+    <Suspense fallback={<div className="flex-grow flex items-center justify-center w-full min-h-screen bg-gray-50"><p className="text-xs font-bold uppercase tracking-widest text-gray-400 animate-pulse">Loading Secure Profile...</p></div>}>
+      <CustomerProfileContent />
+    </Suspense>
+  );
 }
