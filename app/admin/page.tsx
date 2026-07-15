@@ -48,7 +48,7 @@ export default function AdminDashboard() {
   const [isSavingUpi, setIsSavingUpi] = useState(false);
 
   // --- GLOBAL FEE STATES ---
-  const [platformFee, setPlatformFee] = useState<number>(100);
+  const [platformFee, setPlatformFee] = useState<number>(12); // Defaulted to a typical percentage value
   const [driverFee, setDriverFee] = useState<number>(800);
   const [deliveryFee, setDeliveryFee] = useState<number>(500);
   const [pickupFee, setPickupFee] = useState<number>(500);
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
       // B. Fetch Platform Settings
       const settingsRef = doc(db, "platformSettings", "global");
       const settingsSnap = await getDoc(settingsRef);
-      let currentPlatformFee = 100;
+      let currentPlatformFeeRate = 12;
 
       if (settingsSnap.exists()) {
         const data = settingsSnap.data();
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
         
         if (data.platformFee !== undefined) {
           setPlatformFee(data.platformFee);
-          currentPlatformFee = data.platformFee;
+          currentPlatformFeeRate = data.platformFee;
         }
         if (data.driverFee !== undefined) setDriverFee(data.driverFee);
         if (data.deliveryFee !== undefined) setDeliveryFee(data.deliveryFee);
@@ -171,10 +171,13 @@ export default function AdminDashboard() {
             };
           }
 
+          // MODIFIED: Calculate platform fee dynamically as a percentage of booking value
+          const platformFeeAmount = (bk.totalPaid * currentPlatformFeeRate) / 100;
+
           vendorMap[vName].totalBookings += 1;
           vendorMap[vName].grossRevenue += bk.totalPaid;
-          vendorMap[vName].platformFeeEarned += currentPlatformFee;
-          globalPlatformFees += currentPlatformFee;
+          vendorMap[vName].platformFeeEarned += platformFeeAmount;
+          globalPlatformFees += platformFeeAmount;
 
           const commRate = vSettings[vName]?.commissionRate || 0;
           const commissionAmount = (bk.totalPaid * commRate) / 100;
@@ -281,12 +284,8 @@ export default function AdminDashboard() {
     }
   };
 
-  // Prevent flicker during load
   if (!authCheckDone) return null; 
 
-  // ==========================================
-  // THE SECURE LOGIN INTERFACE (GATEKEEPER)
-  // ==========================================
   if (!isAdminLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 selection:bg-[#003366] selection:text-white">
@@ -345,13 +344,9 @@ export default function AdminDashboard() {
     );
   }
 
-  // ==========================================
-  // THE MOBILE-FRIENDLY ADMIN DASHBOARD
-  // ==========================================
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col selection:bg-[#003366] selection:text-white overflow-x-hidden">
       
-      {/* MOBILE OPTIMIZED HEADER */}
       <header className="sticky top-0 z-50 bg-[#0a1128] border-b border-slate-800 shadow-xl text-white">
         <div className="flex flex-col md:flex-row md:items-center justify-between px-4 md:px-6 py-4 max-w-7xl mx-auto gap-4">
           <div className="flex items-center justify-between w-full md:w-auto">
@@ -363,7 +358,6 @@ export default function AdminDashboard() {
             </h1>
           </div>
           
-          {/* HORIZONTAL SCROLL NAV FOR MOBILE */}
           <nav className="flex items-center space-x-6 text-sm font-semibold w-full overflow-x-auto pb-2 md:pb-0 snap-x hide-scrollbar">
             <button onClick={() => setActiveTab("overview")} className={`snap-start whitespace-nowrap ${activeTab === "overview" ? "text-amber-400" : "text-slate-300"} hover:text-white transition`}>Overview</button>
             <button onClick={() => setActiveTab("approvals")} className={`snap-start whitespace-nowrap ${activeTab === "approvals" ? "text-amber-400" : "text-slate-300"} hover:text-white transition relative`}>
@@ -386,7 +380,6 @@ export default function AdminDashboard() {
 
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 flex flex-col gap-6 md:gap-10">
         
-        {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div className="flex flex-col gap-6 md:gap-8 animate-in fade-in duration-300">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -426,7 +419,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 2: APPROVALS */}
         {activeTab === "approvals" && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-2 gap-4">
@@ -495,7 +487,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 3: VENDORS */}
         {activeTab === "vendors" && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             <h2 className="text-xl md:text-2xl font-black text-[#0a1128]">Vendor Financial Directory</h2>
@@ -535,7 +526,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 4: CUSTOMERS */}
         {activeTab === "customers" && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             <h2 className="text-xl md:text-2xl font-black text-[#0a1128]">Customer Database</h2>
@@ -567,7 +557,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 5: PLATFORM SETTINGS */}
         {activeTab === "settings" && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             <h2 className="text-xl md:text-2xl font-black text-[#0a1128]">Platform Settings</h2>
@@ -603,7 +592,8 @@ export default function AdminDashboard() {
               <h3 className="text-base md:text-lg font-black text-[#003366] border-b border-slate-100 pb-3 mb-6">Global Fee Controls</h3>
               <form onSubmit={handleSaveFees} className="flex flex-col gap-6">
                 
-                <AdminFeeInput label="Platform Fee (Customer Markup)" value={platformFee} onChange={setPlatformFee} />
+                {/* MODIFIED: Added isPercentage flag to convert this field's layout unit to % */}
+                <AdminFeeInput label="Platform Fee (Customer Markup Percentage)" value={platformFee} onChange={setPlatformFee} isPercentage={true} />
                 <AdminFeeInput label="Request a Driver (Per Day)" value={driverFee} onChange={setDriverFee} />
                 <AdminFeeInput label="Home Delivery (One-Time)" value={deliveryFee} onChange={setDeliveryFee} />
                 <AdminFeeInput label="Home Pickup (After Trip)" value={pickupFee} onChange={setPickupFee} />
@@ -627,18 +617,22 @@ export default function AdminDashboard() {
 
 // --- HELPER COMPONENTS FOR THE UI ---
 
-function AdminFeeInput({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) {
+// MODIFIED: Accepts an optional isPercentage prop to toggle the unit prefix/suffix indicator
+function AdminFeeInput({ label, value, onChange, isPercentage = false }: { label: string, value: number, onChange: (val: number) => void, isPercentage?: boolean }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 border-b border-slate-50 pb-5 last:border-0 last:pb-0">
       <h4 className="font-bold text-xs md:text-sm text-slate-700">{label}</h4>
       <div className="flex items-center gap-2">
-        <span className="text-sm font-black text-slate-400">₹</span>
-        <input 
-          type="number" 
-          value={value} 
-          onChange={(e) => onChange(Number(e.target.value))} 
-          className="w-full sm:w-24 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-800 outline-none focus:border-[#003366] focus:ring-1 focus:ring-[#003366] transition bg-slate-50" 
-        />
+        {!isPercentage && <span className="text-sm font-black text-slate-400">₹</span>}
+        <div className="relative flex items-center">
+          <input 
+            type="number" 
+            value={value} 
+            onChange={(e) => onChange(Number(e.target.value))} 
+            className={`w-full sm:w-24 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-800 outline-none focus:border-[#003366] focus:ring-1 focus:ring-[#003366] transition bg-slate-50 ${isPercentage ? 'pr-6' : ''}`} 
+          />
+          {isPercentage && <span className="absolute right-2 text-xs font-black text-slate-400">%</span>}
+        </div>
       </div>
     </div>
   );

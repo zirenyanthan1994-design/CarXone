@@ -82,6 +82,7 @@ export default function PartnersDashboard() {
   const [termsText, setTermsText] = useState("");
   const [upiId, setUpiId] = useState(""); 
   const [commissionRate, setCommissionRate] = useState<number>(0); 
+  const [globalPlatformFeeRate, setGlobalPlatformFeeRate] = useState<number>(0); 
   const [whatsappNumber, setWhatsappNumber] = useState(""); 
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -113,28 +114,24 @@ export default function PartnersDashboard() {
   const [isSubmittingVerify, setIsSubmittingVerify] = useState(false);
 
   // ==========================================
-  // THE GATEKEEPER SECURITY CHECK (UPDATED)
+  // THE GATEKEEPER SECURITY CHECK
   // ==========================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        // Not logged in? Kick them to the VENDOR login page immediately.
         router.push("/partners/login"); 
       } else {
         try {
-          // Check if this specific user has a Vendor Profile in the database
           const vendorRef = doc(db, "vendors", user.uid);
           const vendorSnap = await getDoc(vendorRef);
 
           if (!vendorSnap.exists()) {
-            // They are logged in, but they are a CUSTOMER!
             alert("Access Denied: You are logged in with a Customer account. You must use a registered Vendor account to access this dashboard.");
             await auth.signOut();
             router.push("/partners/login");
           } else {
-            // They are a verified vendor! Open the gates.
             setIsAuthChecking(false);
-            fetchDashboardData(); // Load their data
+            fetchDashboardData(); 
           }
         } catch (error) {
           console.error("Auth check failed:", error);
@@ -161,6 +158,13 @@ export default function PartnersDashboard() {
       bookingsSnap.forEach((doc) => bookings.push({ id: doc.id, ...doc.data() } as Booking));
       setVendorBookings(bookings);
 
+      // Fetch Global Platform Fee Rate (%) set by Admin
+      const globalSettingsSnap = await getDoc(doc(db, "platformSettings", "global"));
+      if (globalSettingsSnap.exists()) {
+        setGlobalPlatformFeeRate(globalSettingsSnap.data().platformFee || 0);
+      }
+
+      // Fetch Vendor Specific Settings
       const settingsRef = doc(db, "vendorSettings", "Dimapur Rentals");
       const settingsSnap = await getDoc(settingsRef);
       if (settingsSnap.exists()) {
@@ -184,7 +188,7 @@ export default function PartnersDashboard() {
       await setDoc(doc(db, "vendorSettings", "Dimapur Rentals"), { 
         terms: termsText, 
         upiId: upiId, 
-        commissionRate: Number(commissionRate), 
+        // NOTE: commissionRate is strictly excluded so vendors cannot overwrite admin settings
         whatsappNumber: whatsappNumber, 
         updatedAt: new Date().toISOString() 
       }, { merge: true }); 
@@ -312,15 +316,19 @@ export default function PartnersDashboard() {
 
   const calculatedBookings = activeEarningsBookings.map(booking => {
     const bookingBaseTotal = booking.totalPaid; 
+    
+    // Calculate both deductions dynamically via percentage
     const commissionAmount = (bookingBaseTotal * commissionRate) / 100; 
-    const vendorKeeps = bookingBaseTotal - commissionAmount; 
-    const platformKeeps = commissionAmount; 
+    const platformFeeAmount = (bookingBaseTotal * globalPlatformFeeRate) / 100;
+    
+    const vendorKeeps = bookingBaseTotal - commissionAmount - platformFeeAmount; 
+    const platformKeeps = commissionAmount + platformFeeAmount; 
 
     totalGrossRevenue += bookingBaseTotal;
     totalVendorNet += vendorKeeps;
     totalPlatformShare += platformKeeps;
 
-    return { ...booking, commissionAmount, vendorKeeps, platformKeeps };
+    return { ...booking, commissionAmount, platformFeeAmount, vendorKeeps, platformKeeps };
   });
 
   const formatDate = (d: string) => {
@@ -541,23 +549,29 @@ export default function PartnersDashboard() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="bg-gray-800 text-white p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <h3 className="font-black text-lg">Detailed Booking Ledger</h3>
-                <span className="bg-gray-700 text-[10px] sm:text-xs font-bold px-3 py-1 rounded text-gray-300">
-                  Commission: {commissionRate}%
-                </span>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-gray-700 text-[10px] sm:text-xs font-bold px-3 py-1 rounded text-gray-300">
+                    Platform Fee: {globalPlatformFeeRate}%
+                  </span>
+                  <span className="bg-gray-700 text-[10px] sm:text-xs font-bold px-3 py-1 rounded text-gray-300">
+                    Commission: {commissionRate}%
+                  </span>
+                </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
+                <table className="w-full text-left text-sm whitespace-nowrap min-w-[700px]">
                   <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase text-[10px] font-black tracking-widest">
                     <tr>
                       <th className="px-4 sm:px-6 py-4">Customer & Vehicle</th>
                       <th className="px-4 sm:px-6 py-4">Gross Total Paid</th>
-                      <th className="px-4 sm:px-6 py-4 bg-orange-50 text-orange-800 border-l border-r border-orange-100">- Commission ({commissionRate}%)</th>
+                      <th className="px-4 sm:px-6 py-4 bg-blue-50 text-blue-800 border-l border-r border-blue-100">- Platform Fee ({globalPlatformFeeRate}%)</th>
+                      <th className="px-4 sm:px-6 py-4 bg-orange-50 text-orange-800 border-r border-orange-100">- Commission ({commissionRate}%)</th>
                       <th className="px-4 sm:px-6 py-4 text-green-600 bg-green-50 font-black border-r border-green-100">Vendor Net</th>
                     </tr>
                   </thead>
                   <tbody>
                     {calculatedBookings.length === 0 ? (
-                       <tr><td colSpan={4} className="text-center py-8 text-gray-400 font-bold">No active bookings yet.</td></tr>
+                       <tr><td colSpan={5} className="text-center py-8 text-gray-400 font-bold">No active bookings yet.</td></tr>
                     ) : (
                       calculatedBookings.map((bk) => (
                         <tr key={bk.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
@@ -566,6 +580,7 @@ export default function PartnersDashboard() {
                             <div className="text-xs text-gray-500">{bk.vehicleName}</div>
                           </td>
                           <td className="px-4 sm:px-6 py-4 font-black text-gray-700">₹{bk.totalPaid.toLocaleString()}</td>
+                          <td className="px-4 sm:px-6 py-4 font-bold text-blue-600 bg-blue-50/50 border-r border-blue-50">- ₹{bk.platformFeeAmount.toLocaleString()}</td>
                           <td className="px-4 sm:px-6 py-4 font-bold text-orange-600 bg-orange-50/50 border-r border-orange-50">- ₹{bk.commissionAmount.toLocaleString()}</td>
                           <td className="px-4 sm:px-6 py-4 font-black text-green-600 text-base bg-green-50/50 border-r border-green-50">₹{bk.vendorKeeps.toLocaleString()}</td>
                         </tr>
@@ -604,14 +619,16 @@ export default function PartnersDashboard() {
                   <input type="tel" required value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="+91" className="w-full border-2 border-white rounded-lg p-3 sm:p-4 focus:border-green-600 outline-none text-sm font-bold text-black shadow-sm" />
                 </div>
 
+                {/* --- READ-ONLY COMMISSION RATE DISPLAY --- */}
                 <div className="bg-gray-50 border border-gray-200 p-4 sm:p-6 rounded-lg shadow-sm">
                   <div className="flex items-center gap-3 mb-2">
                     <label className="block text-sm font-black text-gray-800 uppercase tracking-widest">Platform Commission (%)</label>
+                    <span className="bg-blue-100 text-[#003366] text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Admin Configured</span>
                   </div>
-                  <p className="text-xs text-gray-500 mb-4 font-medium">Are you willing to give the platform a commission for bringing you confirmed bookings? Enter the percentage here.</p>
+                  <p className="text-xs text-gray-500 mb-4 font-medium">This is the platform commission rate applied to your confirmed bookings. This rate is managed and set directly by the platform administration.</p>
                   <div className="relative w-full md:w-1/3">
-                    <input type="number" min="0" max="100" value={commissionRate} onChange={(e) => setCommissionRate(Number(e.target.value))} placeholder="e.g. 5" className="w-full border-2 border-white rounded-lg p-3 sm:p-4 pl-10 sm:pl-12 focus:border-gray-400 outline-none text-base sm:text-lg font-black text-gray-800 shadow-sm" />
-                    <span className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 font-black text-gray-400 text-base sm:text-lg">%</span>
+                    <input type="number" value={commissionRate} disabled readOnly className="w-full bg-gray-200 border-2 border-gray-200 rounded-lg p-3 sm:p-4 pl-10 sm:pl-12 text-base sm:text-lg font-black text-gray-600 shadow-inner cursor-not-allowed outline-none" />
+                    <span className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 font-black text-gray-500 text-base sm:text-lg">%</span>
                   </div>
                 </div>
 
