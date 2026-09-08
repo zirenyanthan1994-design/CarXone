@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { auth, db } from "../../firebase/config"; 
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -41,10 +42,14 @@ export default function VendorLogin() {
       // 3. Success! Send them to the Partner Dashboard
       router.push("/partners");
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login Error:", error);
+      
+      // Safely cast the error to check Firebase error codes
+      const firebaseError = error as { code?: string };
+      
       // Make errors easy to understand
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/user-not-found') {
         setErrorMessage("Invalid email or password. Please try again.");
       } else {
         setErrorMessage("Failed to log in. Please check your connection.");
@@ -62,11 +67,11 @@ export default function VendorLogin() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-black">
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <a href="/">
+        <Link href="/">
           <h1 className="text-3xl font-black tracking-widest text-[#003366] mb-2 hover:text-black transition">
             CarXone <span className="text-lg font-normal text-gray-500">| PARTNERS</span>
           </h1>
-        </a>
+        </Link>
         <h2 className="text-xl font-bold text-black mt-4">Vendor Portal Login</h2>
         <p className="text-sm text-gray-500 mt-2">Manage your fleet, track earnings, and verify bookings.</p>
       </div>
@@ -112,7 +117,7 @@ export default function VendorLogin() {
                 <input type="checkbox" className="w-4 h-4 accent-[#003366]" />
                 <span className="text-xs font-bold text-gray-600">Remember me</span>
               </label>
-              <a href="/forgot-password" className="text-xs font-bold text-[#003366] hover:underline">Forgot password?</a>
+              <Link href="/forgot-password" className="text-xs font-bold text-[#003366] hover:underline">Forgot password?</Link>
             </div>
 
             <button 
@@ -130,7 +135,7 @@ export default function VendorLogin() {
           <div className="mt-6 border-t border-gray-200 pt-6 text-center">
             <p className="text-sm text-gray-500">
               Want to list your vehicles? <br/>
-              <a href="/partners/signup" className="font-bold text-[#003366] hover:underline">Apply to become a CarXone Partner</a>
+              <Link href="/partners/signup" className="font-bold text-[#003366] hover:underline">Apply to become a CarXone Partner</Link>
             </p>
           </div>
         </div>

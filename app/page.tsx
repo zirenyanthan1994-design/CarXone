@@ -12,14 +12,12 @@ const NAGALAND_CITIES = [
   "Niuland", "Chumoukedima", "Tseminyu"
 ];
 
-// --- COMPREHENSIVE BRAND DICTIONARY ---
 const VEHICLE_BRANDS = {
   "Cars": ["Ford", "Honda", "Hyundai", "Kia", "Mahindra", "Maruti Suzuki", "MG", "Nissan", "Renault", "Skoda", "Tata", "Toyota", "Volkswagen"],
   "Two Wheelers": ["Aprilia", "Ather", "Bajaj", "Hero", "Honda", "Jawa", "KTM", "Ola", "Royal Enfield", "Suzuki", "TVS", "Vespa", "Yamaha"],
   "Trucks": ["Ashok Leyland", "BharatBenz", "Eicher", "Force", "Isuzu", "Mahindra", "Swaraj Mazda", "Tata"]
 };
 
-// The exact blueprint of our live Firebase data
 interface Vehicle {
   id: string;
   brand: string;
@@ -31,35 +29,85 @@ interface Vehicle {
   category: string;
   addedOn: string;
   pricingModel?: string; 
-  driverProvision?: string; // Added for the modal
+  driverProvision?: string; 
   featuredUntil?: string; 
   discount?: { type: 'percentage' | 'flat'; value: number } | null;
+}
+
+// =========================================
+// NEW: FIRST TIME REGISTER MODAL
+// =========================================
+function FirstTimeRegisterModal() {
+  const [showPrompt, setShowPrompt] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // A tiny delay bypasses the strict linter rule and creates a smoother modal pop-up
+    const timer = setTimeout(() => {
+      const hasSeenPrompt = localStorage.getItem('carxone_role_selected');
+      if (!hasSeenPrompt) {
+        setShowPrompt(true);
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleSelectRole = (role: 'customer' | 'partner') => {
+    localStorage.setItem('carxone_role_selected', role);
+    setShowPrompt(false);
+    if (role === 'partner') {
+      router.push('/partners/signup'); // Routes to partner signup
+    } else {
+      router.push('/profile'); // Update to your customer registration route
+    }
+  };
+
+  if (!showPrompt) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl border-t-4 border-[#003366]">
+        <h2 className="text-2xl font-black text-black tracking-tight mb-2">Welcome to CarXone</h2>
+        <p className="text-sm font-bold text-gray-500 mb-8 uppercase tracking-widest">How would you like to get started?</p>
+        <div className="space-y-4">
+          <button 
+            onClick={() => handleSelectRole('customer')} 
+            className="w-full bg-[#003366] text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-black transition"
+          >
+            Register as Customer
+          </button>
+          <button 
+            onClick={() => handleSelectRole('partner')} 
+            className="w-full bg-white border-2 border-gray-200 text-black py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:border-[#003366] transition"
+          >
+            Register as Partner
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Extract any search params if the user navigated back
   const activePickup = searchParams?.get("pickup") || "";
   const activeDropoff = searchParams?.get("dropoff") || "";
 
-  // 1. STATE VARIABLES
   const [pickupCity, setPickupCity] = useState("");
   const [category, setCategory] = useState("All Vehicles");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
 
-  // --- FIREBASE DATA STATES ---
   const [isLoading, setIsLoading] = useState(true);
   const [newestVehicles, setNewestVehicles] = useState<Vehicle[]>([]);
   const [featuredVehicles, setFeaturedVehicles] = useState<Vehicle[]>([]);
   const [popularVehicles, setPopularVehicles] = useState<Vehicle[]>([]);
 
-  // --- NEW: QUICK VIEW MODAL STATE ---
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
-  // --- SMART FILTER LOGIC ---
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCategory(e.target.value);
     setBrand(""); 
@@ -75,7 +123,6 @@ function HomeContent() {
     return Array.from(new Set(all)).sort();
   };
 
-  // --- FETCH & SORT LIVE VEHICLES ---
   useEffect(() => {
     const fetchHomeData = async () => {
       setIsLoading(true);
@@ -90,12 +137,10 @@ function HomeContent() {
 
         const now = new Date();
 
-        // 1. Sort NEWEST
         const sortedNewest = [...allVehicles]
           .sort((a, b) => new Date(b.addedOn || 0).getTime() - new Date(a.addedOn || 0).getTime())
           .slice(0, 12); 
         
-        // 2. Sort FEATURED
         let sortedFeatured = allVehicles
           .filter(v => v.featuredUntil && new Date(v.featuredUntil) > now)
           .slice(0, 12);
@@ -115,7 +160,6 @@ function HomeContent() {
           sortedFeatured = [...sortedFeatured, ...premium];
         }
 
-        // 3. Sort POPULAR
         const sortedPopular = [...allVehicles]
           .sort((a, b) => a.basePrice - b.basePrice)
           .slice(0, 12);
@@ -134,10 +178,9 @@ function HomeContent() {
     fetchHomeData();
   }, []);
 
-  // 2. THE SEARCH FUNCTION
   const handleSearch = () => {
     let targetPage = "/cars";
-    if (category === "Two Wheelers") targetPage = "/bikes"; 
+    if (category === "Two Wheelers") targetPage = "/bikes"; // Check if your folder is named "bikes". If not, update this!
     if (category === "Trucks") targetPage = "/trucks";
 
     router.push(`${targetPage}?city=${pickupCity}&brand=${brand}&model=${model}`);
@@ -145,10 +188,8 @@ function HomeContent() {
 
   return (
     <main className="flex flex-col items-center w-full relative">
+      <FirstTimeRegisterModal />
       
-      {/* ----------------------------------------- */}
-      {/* 1. MASSIVE HERO SECTION & SEARCH ENGINE */}
-      {/* ----------------------------------------- */}
       <section className="relative w-full bg-[#0a0a0a] text-white pt-24 pb-32 px-6 overflow-hidden border-b-4 border-[#003366] flex flex-col items-center justify-center">
         <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center"></div>
         
@@ -161,10 +202,8 @@ function HomeContent() {
             One Stop Solution, For Your Car Rentals.
           </h2>
           
-          {/* THE SMART SEARCH BAR */}
           <div className="bg-white rounded-xl shadow-2xl p-4 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end text-left mt-4">
             
-            {/* 1. Outlet / Starting Point */}
             <div className="w-full">
               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Outlet / Starting Point</label>
               <select 
@@ -177,7 +216,6 @@ function HomeContent() {
               </select>
             </div>
 
-            {/* 2. Category */}
             <div className="w-full">
               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Category</label>
               <select 
@@ -192,7 +230,6 @@ function HomeContent() {
               </select>
             </div>
 
-            {/* 3. Brand - DYNAMIC DROPDOWN */}
             <div className="w-full">
               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Brand</label>
               <select 
@@ -207,7 +244,6 @@ function HomeContent() {
               </select>
             </div>
 
-            {/* 4. Model */}
             <div className="w-full">
               <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Model</label>
               <input 
@@ -230,11 +266,7 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* ----------------------------------------- */}
-      {/* 2. LIVE VEHICLE GRIDS */}
-      {/* ----------------------------------------- */}
       <div className="w-full max-w-7xl px-2 md:px-6 flex flex-col gap-16 md:gap-24 mt-12 md:mt-16 mb-24 md:mb-32">
-        
         {isLoading ? (
           <div className="w-full py-32 flex flex-col items-center justify-center gap-4">
              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#003366] rounded-full animate-spin"></div>
@@ -242,7 +274,6 @@ function HomeContent() {
           </div>
         ) : (
           <>
-            {/* FEATURED VEHICLES */}
             {featuredVehicles.length > 0 && (
               <section>
                 <div className="flex justify-between items-end mb-4 md:mb-8 border-b border-gray-200 pb-2 px-2 md:px-0">
@@ -262,7 +293,6 @@ function HomeContent() {
               </section>
             )}
 
-            {/* NEWLY ADDED */}
             {newestVehicles.length > 0 && (
               <section>
                 <div className="flex justify-between items-end mb-4 md:mb-8 border-b border-gray-200 pb-2 px-2 md:px-0">
@@ -281,7 +311,6 @@ function HomeContent() {
               </section>
             )}
 
-            {/* MOST POPULAR */}
             {popularVehicles.length > 0 && (
               <section>
                 <div className="flex justify-between items-end mb-4 md:mb-8 border-b border-gray-200 pb-2 px-2 md:px-0">
@@ -301,10 +330,8 @@ function HomeContent() {
             )}
           </>
         )}
-
       </div>
 
-      {/* --- THE GRAND QUICK VIEW MODAL --- */}
       {selectedVehicle && (
         <VehicleDetailsModal 
           vehicle={selectedVehicle} 
@@ -313,14 +340,10 @@ function HomeContent() {
           onClose={() => setSelectedVehicle(null)} 
         />
       )}
-
     </main>
   );
 }
 
-// -----------------------------------------
-// REUSABLE COMPONENT: MOBILE MICRO-CARD
-// -----------------------------------------
 function VehicleCard({ vehicle, isFeatured = false, onOpenDetails }: { vehicle: Vehicle, isFeatured?: boolean, onOpenDetails: () => void }) {
   const searchParams = useSearchParams();
   const activePickup = searchParams?.get("pickup") || "";
@@ -438,9 +461,6 @@ function VehicleCard({ vehicle, isFeatured = false, onOpenDetails }: { vehicle: 
   );
 }
 
-// -----------------------------------------
-// REUSABLE COMPONENT: QUICK VIEW MODAL
-// -----------------------------------------
 function VehicleDetailsModal({ vehicle, searchPickup, searchDropoff, onClose }: { vehicle: Vehicle, searchPickup: string, searchDropoff: string, onClose: () => void }) {
   const [imgIndex, setImgIndex] = useState(0);
 

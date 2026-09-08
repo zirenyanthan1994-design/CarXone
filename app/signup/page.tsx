@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 // 1. IMPORT THE TELEPORTER
 import { useRouter } from "next/navigation"; 
 import { auth } from "../firebase/config";
@@ -19,7 +20,8 @@ export default function SignUpPage() {
     setStatusMessage("Connecting to CarXone servers...");
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Removed the unused userCredential variable assignment
+      await createUserWithEmailAndPassword(auth, email, password);
       setStatusMessage("Account created successfully! Redirecting...");
       
       // 3. TELEPORT THE USER!
@@ -34,11 +36,11 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-black">
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <a href="/">
+        <Link href="/">
           <h1 className="text-4xl font-black tracking-widest text-black mb-2 hover:text-[#003366] transition">
             CarXone
           </h1>
-        </a>
+        </Link>
         <h2 className="text-2xl font-bold text-[#003366]">Create your account</h2>
         <p className="text-sm text-gray-500 mt-2">Upload your KYC once. Book instantly forever.</p>
       </div>
@@ -140,7 +142,7 @@ export default function SignUpPage() {
             </div>
             
             <p className="text-center text-sm text-gray-500 mt-4">
-              Already have an account? <a href="/login" className="font-bold text-[#003366] hover:underline">Log in</a>
+              Already have an account? <Link href="/login" className="font-bold text-[#003366] hover:underline">Log in</Link>
             </p>
 
           </form>

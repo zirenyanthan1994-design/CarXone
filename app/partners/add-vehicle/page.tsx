@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { db, storage } from "../../firebase/config"; 
 import { collection, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -11,6 +13,30 @@ const NAGALAND_CITIES = [
   "Mon", "Phek", "Kiphire", "Longleng", "Peren", "Noklak", "Shamator", 
   "Niuland", "Chumoukedima", "Tseminyu"
 ];
+
+// --- TYPE DEFINITIONS ---
+interface Destination {
+  city: string;
+  price: number;
+}
+
+interface VehicleData {
+  category: string;
+  driverProvision: string;
+  brand: string;
+  model: string;
+  registration: string;
+  pricingModel: string;
+  basePrice: number;
+  outletLocation: string;
+  images: string[];
+  status: string;
+  vendorId: string;
+  addedOn: string;
+  kmTiers?: { km: number; price: number }[];
+  tierBillingLogic?: string;
+  destinations?: Destination[];
+}
 
 export default function AddVehicle() {
   const [pricingModel, setPricingModel] = useState("per_24h");
@@ -134,7 +160,7 @@ export default function AddVehicle() {
       
       // AUTO-CALCULATE LOWEST PRICE IF PER_HIRE IS SELECTED
       let finalBasePrice = Number(basePrice);
-      let finalDestinations: any[] = [];
+      let finalDestinations: Destination[] = [];
 
       if (pricingModel === "per_hire") {
         finalDestinations = destinations
@@ -146,8 +172,8 @@ export default function AddVehicle() {
         }
       }
 
-      // Package the data for Firebase
-      const vehicleData: any = {
+      // Package the data for Firebase using the strictly typed interface
+      const vehicleData: VehicleData = {
         category,
         driverProvision,
         brand,
@@ -210,14 +236,14 @@ export default function AddVehicle() {
       <header className="sticky top-0 z-50 bg-[#003366] border-b border-gray-800 shadow-sm text-white">
         <div className="flex items-center justify-between px-4 py-4 max-w-7xl mx-auto">
           <div className="flex items-center space-x-4">
-            <a href="/partners" className="flex items-center space-x-4">
+            <Link href="/partners" className="flex items-center space-x-4">
               <h1 className="text-2xl font-black tracking-widest text-white">
                 CarXone <span className="text-sm font-normal text-blue-300">| PARTNERS</span>
               </h1>
-            </a>
+            </Link>
           </div>
           <div className="flex items-center space-x-6 text-sm font-bold">
-            <a href="/partners" className="hover:text-blue-300 transition">Dashboard</a>
+            <Link href="/partners" className="hover:text-blue-300 transition">Dashboard</Link>
             <button className="bg-white text-[#003366] px-5 py-1.5 rounded hover:bg-black hover:text-white transition">
               Log Out
             </button>
@@ -225,7 +251,7 @@ export default function AddVehicle() {
         </div>
       </header>
 
-      <main className="flex-grow w-full max-w-3xl mx-auto px-4 py-10 flex flex-col gap-8">
+      <main className="grow w-full max-w-3xl mx-auto px-4 py-10 flex flex-col gap-8">
         
         <div className="border-b pb-4">
           <h2 className="text-3xl font-black text-black">Add New Vehicle</h2>
@@ -345,7 +371,7 @@ export default function AddVehicle() {
                         <button 
                           type="button" 
                           onClick={() => removeKmTier(index)} 
-                          className="bg-red-100 text-red-600 p-2.5 rounded hover:bg-red-600 hover:text-white transition flex-shrink-0"
+                          className="bg-red-100 text-red-600 p-2.5 rounded hover:bg-red-600 hover:text-white transition shrink-0"
                           title="Remove Tier"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -422,7 +448,7 @@ export default function AddVehicle() {
                         <button 
                           type="button" 
                           onClick={() => removeDestination(index)} 
-                          className="bg-red-100 text-red-600 p-2.5 rounded hover:bg-red-600 hover:text-white transition flex-shrink-0"
+                          className="bg-red-100 text-red-600 p-2.5 rounded hover:bg-red-600 hover:text-white transition shrink-0"
                           title="Remove Destination"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -466,8 +492,13 @@ export default function AddVehicle() {
             {previewUrls.length > 0 && !imageError && (
               <div className="grid grid-cols-3 gap-4 mt-2">
                 {previewUrls.map((url, index) => (
-                  <div key={index} className="relative aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                    <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                  <div key={index} className="relative aspect-4/3 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                    <Image 
+                      src={url} 
+                      alt={`Preview ${index + 1}`} 
+                      fill 
+                      className="object-cover" 
+                    />
                     <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded">
                       Image {index + 1}
                     </div>

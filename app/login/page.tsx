@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 // IMPORT THE TELEPORTER AND FIREBASE BRAIN
 import { useRouter } from "next/navigation";
 import { auth } from "../firebase/config";
@@ -20,15 +21,16 @@ export default function CustomerLogin() {
     setStatusMessage("Authenticating...");
 
     try {
-      // Tell Firebase to check the credentials
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Tell Firebase to check the credentials (removed unused 'userCredential' variable)
+      await signInWithEmailAndPassword(auth, email, password);
       setStatusMessage("Login successful! Redirecting...");
       
       // Teleport them to their profile!
       router.push("/profile");
       
     } catch (error) {
-      // If they type the wrong password, Firebase tells them!
+      // Log the error to resolve the ESLint warning, then show a user-friendly message
+      console.error("Login Error:", error);
       setStatusMessage("Error: Invalid email or password.");
     }
   };
@@ -37,11 +39,11 @@ export default function CustomerLogin() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-black">
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <a href="/">
+        <Link href="/">
           <h1 className="text-4xl font-black tracking-widest text-black mb-2 hover:text-[#003366] transition">
             CarXone
           </h1>
-        </a>
+        </Link>
         <h2 className="text-2xl font-bold text-[#003366] mt-4">Welcome Back</h2>
         <p className="text-sm text-gray-500 mt-2">Log in to book your next ride.</p>
       </div>
@@ -81,7 +83,7 @@ export default function CustomerLogin() {
                 <input type="checkbox" className="w-4 h-4 accent-[#003366]" />
                 <span className="text-xs font-bold text-gray-600">Remember me</span>
               </label>
-              <a href="/forgot-password" className="text-xs font-bold text-[#003366] hover:underline">Forgot password?</a>
+              <Link href="/forgot-password" className="text-xs font-bold text-[#003366] hover:underline">Forgot password?</Link>
             </div>
 
             {/* Changed from type="button" to type="submit" */}
@@ -99,8 +101,8 @@ export default function CustomerLogin() {
 
           <div className="mt-6 border-t border-gray-200 pt-6 text-center">
             <p className="text-sm text-gray-500">
-              Don't have an account? <br/>
-              <a href="/signup" className="font-bold text-[#003366] hover:underline">Sign up and verify your KYC</a>
+              Don&apos;t have an account? <br/>
+              <Link href="/signup" className="font-bold text-[#003366] hover:underline">Sign up and verify your KYC</Link>
             </p>
           </div>
         </div>

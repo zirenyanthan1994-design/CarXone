@@ -26,10 +26,10 @@ function BookingFlow() {
   const baseRate = parseInt(rawPrice);
   const urlCity = searchParams.get("city") || "Dimapur"; 
 
-  // --- FORM STATES (Start Blank to Prevent Hydration Errors) ---
-  const [pickupDate, setPickupDate] = useState("");
-  const [dropoffDate, setDropoffDate] = useState("");
-  const [pickupLocation, setPickupLocation] = useState("");
+  // --- FORM STATES (Initialized directly from URL query parameters) ---
+  const [pickupDate, setPickupDate] = useState(() => searchParams.get("pickup") || "");
+  const [dropoffDate, setDropoffDate] = useState(() => searchParams.get("dropoff") || "");
+  const [pickupLocation, setPickupLocation] = useState(() => searchParams.get("city") || "");
   const [dropoffLocation, setDropoffLocation] = useState("");
   const [specialRemarks, setSpecialRemarks] = useState("");
   
@@ -67,19 +67,6 @@ function BookingFlow() {
     });
     return () => unsubscribe();
   }, []);
-
-  // --- THE MAGIC FIX: FORCE THE FORM TO READ THE URL ---
-  useEffect(() => {
-    if (searchParams) {
-      const pDate = searchParams.get("pickup");
-      const dDate = searchParams.get("dropoff");
-      const pCity = searchParams.get("city");
-      
-      if (pDate) setPickupDate(pDate);
-      if (dDate) setDropoffDate(dDate);
-      if (pCity) setPickupLocation(pCity);
-    }
-  }, [searchParams]);
 
   // --- FETCH SETTINGS FROM FIREBASE ---
   useEffect(() => {
@@ -193,12 +180,12 @@ function BookingFlow() {
   };
 
   return (
-    <main className="flex-grow w-full max-w-7xl mx-auto px-4 py-10 flex flex-col lg:flex-row gap-10 relative bg-gray-50 min-h-screen">
+    <main className="grow w-full max-w-7xl mx-auto px-4 py-10 flex flex-col lg:flex-row gap-10 relative bg-gray-50 min-h-screen">
       
       {/* ----------------------------------------- */}
       {/* LEFT COLUMN: THE BOOKING FORM */}
       {/* ----------------------------------------- */}
-      <div className="flex-grow flex flex-col gap-8">
+      <div className="grow flex flex-col gap-8">
         
         {/* --- UPGRADED SMART BACK BUTTON --- */}
         <button 
@@ -221,7 +208,7 @@ function BookingFlow() {
                 onChange={(e) => setPickupLocation(e.target.value)}
                 className="w-full border-b-2 border-gray-200 focus:border-[#003366] outline-none py-2 text-black text-sm font-bold transition bg-transparent" 
               />
-              <p className="text-[10px] text-gray-400 mt-1 font-bold">Auto-filled with the vehicle's home city.</p>
+              <p className="text-[10px] text-gray-400 mt-1 font-bold">Auto-filled with the vehicle&apos;s home city.</p>
             </div>
             
             <div>
@@ -281,7 +268,7 @@ function BookingFlow() {
             
             <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition group ${needsDriver ? 'border-[#003366] bg-blue-50' : 'border-gray-200 hover:border-[#003366]'}`}>
               <input type="checkbox" checked={needsDriver} onChange={(e) => setNeedsDriver(e.target.checked)} className="w-5 h-5 accent-[#003366]" />
-              <div className="flex-grow">
+              <div className="grow">
                 <h4 className="font-black text-black">Request a Driver</h4>
                 <p className="text-xs text-gray-500 font-bold mt-1">A professional chauffeur will drive you.</p>
               </div>
@@ -290,7 +277,7 @@ function BookingFlow() {
 
             <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition group ${needsDelivery ? 'border-[#003366] bg-blue-50' : 'border-gray-200 hover:border-[#003366]'}`}>
               <input type="checkbox" checked={needsDelivery} onChange={(e) => setNeedsDelivery(e.target.checked)} className="w-5 h-5 accent-[#003366]" />
-              <div className="flex-grow">
+              <div className="grow">
                 <h4 className="font-black text-black">Home Delivery</h4>
                 <p className="text-xs text-gray-500 font-bold mt-1">Vehicle delivered directly to your door.</p>
               </div>
@@ -299,7 +286,7 @@ function BookingFlow() {
 
             <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition group ${needsHomePickup ? 'border-[#003366] bg-blue-50' : 'border-gray-200 hover:border-[#003366]'}`}>
               <input type="checkbox" checked={needsHomePickup} onChange={(e) => setNeedsHomePickup(e.target.checked)} className="w-5 h-5 accent-[#003366]" />
-              <div className="flex-grow">
+              <div className="grow">
                 <h4 className="font-black text-black">Home Pickup (After Trip)</h4>
                 <p className="text-xs text-gray-500 font-bold mt-1">We will collect the vehicle when you are done.</p>
               </div>
@@ -391,7 +378,7 @@ function BookingFlow() {
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                 />
                 <span className="text-xs text-gray-500 font-bold leading-relaxed">
-                  I have read and explicitly agree to the Vendor's Terms & Conditions.
+                  I have read and explicitly agree to the Vendor&apos;s Terms & Conditions.
                 </span>
               </label>
 
@@ -412,7 +399,7 @@ function BookingFlow() {
       {/* THE TERMS & CONDITIONS MODAL */}
       {/* ----------------------------------------- */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col relative max-h-[80vh]">
             <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
               <h2 className="text-xl font-black text-[#003366] uppercase tracking-widest">Rental Rules</h2>
@@ -434,7 +421,7 @@ function BookingFlow() {
       {/* THE SMART UPI PAYMENT MODAL & UPLOAD */}
       {/* ----------------------------------------- */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md flex flex-col items-center relative">
             
             <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
@@ -459,9 +446,9 @@ function BookingFlow() {
             </a>
 
             <div className="w-full flex items-center gap-4 my-4">
-              <div className="h-px bg-gray-200 flex-grow"></div>
+              <div className="h-px bg-gray-200 grow"></div>
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">OR COPY UPI ID</span>
-              <div className="h-px bg-gray-200 flex-grow"></div>
+              <div className="h-px bg-gray-200 grow"></div>
             </div>
 
             <div className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl p-4 flex justify-between items-center mb-6">

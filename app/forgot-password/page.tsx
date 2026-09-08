@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 // IMPORTING THE FIREBASE BRAIN (Using your working Magic Path!)
 import { auth } from "../firebase/config";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -37,13 +38,13 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-black">
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <a href="/">
+        <Link href="/">
           <h1 className="text-4xl font-black tracking-widest text-black mb-2 hover:text-[#003366] transition">
             CarXone
           </h1>
-        </a>
+        </Link>
         <h2 className="text-2xl font-bold text-[#003366] mt-4">Reset Password</h2>
-        <p className="text-sm text-gray-500 mt-2">Enter your email and we'll send you a link to get back into your account.</p>
+        <p className="text-sm text-gray-500 mt-2">Enter your email and we&apos;ll send you a link to get back into your account.</p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -79,7 +80,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 border-t border-gray-200 pt-6 text-center">
             <p className="text-sm text-gray-500">
               Remember your password? <br/>
-              <a href="/login" className="font-bold text-[#003366] hover:underline">Return to Login</a>
+              <Link href="/login" className="font-bold text-[#003366] hover:underline">Return to Login</Link>
             </p>
           </div>
         </div>

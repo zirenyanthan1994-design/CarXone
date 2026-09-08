@@ -32,14 +32,14 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-xl font-black text-black mb-3">1. Our Role as a Marketplace</h2>
             <p>
-              CarXone operates as an online marketplace connecting customers seeking to rent vehicles with independent vendor partners ("Vendors") who list their vehicles for rent. <strong>CarXone does not own, operate, or maintain any of the vehicles listed on the platform.</strong> The actual rental contract is directly between the Customer and the respective Vendor. 
+              CarXone operates as an online marketplace connecting customers seeking to rent vehicles with independent vendor partners (&quot;Vendors&quot;) who list their vehicles for rent. <strong>CarXone does not own, operate, or maintain any of the vehicles listed on the platform.</strong> The actual rental contract is directly between the Customer and the respective Vendor. 
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-black text-black mb-3">2. Customer Responsibilities</h2>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Valid Licensing:</strong> You must possess a valid, unexpired driver’s license appropriate for the vehicle category you are renting.</li>
+              <li><strong>Valid Licensing:</strong> You must possess a valid, unexpired driver&apos;s license appropriate for the vehicle category you are renting.</li>
               <li><strong>Vehicle Care:</strong> You agree to return the vehicle to the Vendor in the same condition it was received. Any damages, traffic violations, or toll fines incurred during the rental period are strictly your financial responsibility.</li>
               <li><strong>Vendor Rules:</strong> You agree to abide by the specific rental conditions set by the Vendor (e.g., fuel policies, KM limits), which are presented to you during the checkout process.</li>
             </ul>
@@ -60,10 +60,10 @@ export default function TermsAndConditions() {
               <strong>Platform Fees:</strong> CarXone may charge a platform fee during the booking process. This fee covers marketplace maintenance and is non-refundable.
             </p>
             <p className="mb-2">
-              <strong>Rental Payments:</strong> Rental payments are processed directly to the Vendor’s UPI ID. Verification of payment is at the sole discretion of the Vendor.
+              <strong>Rental Payments:</strong> Rental payments are processed directly to the Vendor&apos;s UPI ID. Verification of payment is at the sole discretion of the Vendor.
             </p>
             <p>
-              <strong>Cancellations:</strong> Customers may request cancellations via their dashboard. Refunds are subject to the specific Vendor's cancellation policy. CarXone does not hold rental funds and cannot independently issue refunds for direct Vendor payments.
+              <strong>Cancellations:</strong> Customers may request cancellations via their dashboard. Refunds are subject to the specific Vendor&apos;s cancellation policy. CarXone does not hold rental funds and cannot independently issue refunds for direct Vendor payments.
             </p>
           </section>
 

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Inter } from "next/font/google";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -28,9 +30,15 @@ export default function RootLayout({
             <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
               
               <div className="flex items-center space-x-4">
-                <a href="/">
-                  <img src="/logo.png" alt="CarXone Logo" className="h-16 md:h-20 w-auto object-contain cursor-pointer hover:opacity-70 transition duration-300" />
-                </a>
+                <Link href="/">
+                  <Image 
+                    src="/logo.png" 
+                    alt="CarXone Logo" 
+                    width={160} 
+                    height={80} 
+                    className="h-16 md:h-20 w-auto object-contain cursor-pointer hover:opacity-70 transition duration-300" 
+                  />
+                </Link>
               </div>
 
               <div className="relative">
@@ -51,14 +59,14 @@ export default function RootLayout({
                       <div className="px-6 py-3 bg-gray-50/50">
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fleet Categories</span>
                       </div>
-                      <a href="/cars" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Cars</a>
-                      <a href="/bikes" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Two Wheelers</a>
-                      <a href="/trucks" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-100">Trucks</a>
+                      <Link href="/cars" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Cars</Link>
+                      <Link href="/bikes" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-50">Two Wheelers</Link>
+                      <Link href="/trucks" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition border-b border-gray-100">Trucks</Link>
 
                       <div className="px-6 py-3 bg-gray-50/50">
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Account</span>
                       </div>
-                      <a href="/profile" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition">My Profile</a>
+                      <Link href="/profile" onClick={() => setIsMenuOpen(false)} className="px-6 py-3 text-sm font-bold text-black hover:bg-green-50 hover:text-green-700 transition">My Profile</Link>
                       
                       <div className="p-4 bg-gray-50 border-t border-gray-100">
                         <button className="w-full text-white bg-[#0a0a0a] px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition shadow-md">
@@ -75,7 +83,7 @@ export default function RootLayout({
         )}
 
         {/* MAIN PAGE CONTENT GOES HERE */}
-        <div className="flex-grow flex flex-col w-full">
+        <div className="grow flex flex-col w-full">
           {children}
         </div>
 
@@ -83,13 +91,13 @@ export default function RootLayout({
         {/* PREMIUM GLOBAL FOOTER */}
         {/* ========================================= */}
         {!isHiddenPage && (
-          <footer className="bg-[#0a0a0a] text-white pt-20 pb-10 border-t-[4px] border-green-600 mt-auto">
+          <footer className="bg-[#0a0a0a] text-white pt-20 pb-10 border-t-4 border-green-600 mt-auto">
             <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-16 border-b border-gray-800 pb-16">
               
               <div className="text-left max-w-sm">
-                <a href="/">
+                <Link href="/">
                   <span className="text-4xl font-black tracking-widest text-white block mb-6 hover:opacity-80 transition duration-300">CarXone</span>
-                </a>
+                </Link>
                 <p className="text-gray-400 text-sm font-medium leading-relaxed mb-8">
                   Together with our trusted partners we are here to fulfil your needs. Drive the cars, two wheelers and trucks of your choice.
                 </p>
@@ -106,15 +114,15 @@ export default function RootLayout({
               <div className="flex flex-wrap gap-20">
                 <div className="flex flex-col gap-5">
                   <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Company</span>
-                  <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">About Us</a>
-                  <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Contact Support</a>
-                  <a href="/partners/signup" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Partner Network</a>
+                  <Link href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">About Us</Link>
+                  <Link href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Contact Support</Link>
+                  <Link href="/partners/signup" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Partner Network</Link>
                 </div>
                 <div className="flex flex-col gap-5">
                   <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Legal</span>
-                  <a href="/terms" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Terms & Conditions</a>
-                  <a href="/privacy" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Privacy Policy</a>
-                  <a href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Refund Rules</a>
+                  <Link href="/terms" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Terms & Conditions</Link>
+                  <Link href="/privacy" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Privacy Policy</Link>
+                  <Link href="#" className="text-sm font-semibold text-gray-300 hover:text-green-500 transition">Refund Rules</Link>
                 </div>
               </div>
             </div>

@@ -22,7 +22,6 @@ interface Booking {
     delivery: boolean;
     homePickup: boolean;
   };
-  // Tracking fields for our request features
   cancellationRequested?: boolean;
   cancellationReason?: string;
   changeRequested?: boolean;
@@ -32,7 +31,6 @@ interface Booking {
   vendorRemark?: string;  
 }
 
-// --- NEW: Profile Data Interface ---
 interface UserProfile {
   fullName: string;
   phone: string;
@@ -44,7 +42,10 @@ function CustomerProfileContent() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // --- PROFILE STATES (NEW) ---
+  // --- WELCOME BANNER STATE ---
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  // --- PROFILE STATES ---
   const [profileData, setProfileData] = useState<UserProfile>({ fullName: "", phone: "", address: "" });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -58,11 +59,9 @@ function CustomerProfileContent() {
   // --- MODAL & REQUEST STATES ---
   const [actionBooking, setActionBooking] = useState<Booking | null>(null);
   
-  // Cancellation States
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   
-  // Change Request States
   const [showChangeModal, setShowChangeModal] = useState(false);
   const [changeMessage, setChangeMessage] = useState("");
   const [newPickupDate, setNewPickupDate] = useState(""); 
@@ -70,12 +69,20 @@ function CustomerProfileContent() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- WELCOME MESSAGE TIMER ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser); 
-        fetchUserProfile(currentUser.uid); // Load their personal details
-        fetchUserBookings(currentUser.email); // Load ONLY their bookings
+        fetchUserProfile(currentUser.uid); 
+        fetchUserBookings(currentUser.email); 
       } else {
         router.push("/login"); 
       }
@@ -85,7 +92,6 @@ function CustomerProfileContent() {
     return () => unsubscribe();
   }, [router]);
 
-  // --- NEW: FETCH PROFILE DETAILS ---
   const fetchUserProfile = async (uid: string) => {
     try {
       const snap = await getDoc(doc(db, "customers", uid));
@@ -97,12 +103,10 @@ function CustomerProfileContent() {
     }
   };
 
-  // --- UPGRADED: FETCH ISOLATED BOOKINGS ---
   const fetchUserBookings = async (userEmail: string | null) => {
     if (!userEmail) return;
     setIsLoadingBookings(true);
     try {
-      // THE FIX: The query now explicitly filters for ONLY this exact user!
       const q = query(
         collection(db, "bookings"), 
         where("customerName", "==", userEmail)
@@ -140,7 +144,6 @@ function CustomerProfileContent() {
     }
   };
 
-  // --- NEW: SAVE EDITABLE PROFILE ---
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -161,7 +164,6 @@ function CustomerProfileContent() {
     router.push("/login");
   };
 
-  // --- HANDLE CANCELLATION SUBMIT ---
   const handleCancelSubmit = async () => {
     if (!actionBooking) return;
     setIsSubmitting(true);
@@ -188,7 +190,6 @@ function CustomerProfileContent() {
     }
   };
 
-  // --- HANDLE CHANGE REQUEST SUBMIT ---
   const handleChangeSubmit = async () => {
     if (!actionBooking) return;
     setIsSubmitting(true);
@@ -227,7 +228,7 @@ function CustomerProfileContent() {
 
   if (loading) {
     return (
-      <div className="flex-grow flex items-center justify-center w-full min-h-screen bg-gray-50">
+      <div className="grow flex items-center justify-center w-full min-h-screen bg-gray-50">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 animate-pulse">Loading Secure Profile...</p>
       </div>
     );
@@ -240,150 +241,161 @@ function CustomerProfileContent() {
   };
 
   return (
-    <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-16 flex flex-col lg:flex-row gap-16 min-h-screen bg-white">
+    <main className="grow w-full max-w-7xl mx-auto px-6 py-8 md:py-16 flex flex-col min-h-screen bg-white">
       
       {/* ----------------------------------------- */}
-      {/* LEFT COLUMN: PERSONAL DETAILS & KYC */}
+      {/* DYNAMIC WELCOME BANNER */}
       {/* ----------------------------------------- */}
-      <div className="w-full lg:w-1/3 flex flex-col gap-8">
-        
-        {/* UPGRADED EDITABLE PROFILE CARD */}
-        <div className="bg-white p-8 border border-gray-200 flex flex-col shadow-sm rounded-xl relative">
-          
-          <div className="flex justify-between items-start mb-6">
-             <div className="w-16 h-16 bg-[#003366] text-white rounded-full flex items-center justify-center text-2xl font-black uppercase shadow-md">
-               {profileData.fullName ? profileData.fullName.charAt(0) : user?.email?.charAt(0)}
-             </div>
-             {!isEditingProfile && (
-               <button 
-                 onClick={() => setIsEditingProfile(true)}
-                 className="text-[10px] font-bold text-gray-500 hover:text-[#003366] uppercase tracking-widest transition"
-               >
-                 ✏️ Edit
-               </button>
-             )}
-          </div>
-
-          <h2 className="text-xl font-black text-black tracking-tight truncate">{user?.email}</h2>
-          <p className="text-[10px] font-bold text-gray-400 mt-1 mb-6 uppercase tracking-widest">Account ID</p>
-          
-          {isEditingProfile ? (
-            <form onSubmit={handleSaveProfile} className="flex flex-col gap-4 w-full animate-in fade-in duration-300">
-               <div>
-                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Full Name</label>
-                 <input type="text" required value={profileData.fullName} onChange={(e) => setProfileData({...profileData, fullName: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none" />
-               </div>
-               <div>
-                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Phone Number</label>
-                 <input type="tel" required value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none" />
-               </div>
-               <div>
-                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Address</label>
-                 <textarea rows={2} value={profileData.address} onChange={(e) => setProfileData({...profileData, address: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none resize-none" />
-               </div>
-               <div className="flex gap-2 mt-2">
-                  <button type="button" onClick={() => setIsEditingProfile(false)} className="w-1/2 bg-gray-100 text-gray-600 text-xs font-bold py-2.5 rounded hover:bg-gray-200 transition">Cancel</button>
-                  <button type="submit" disabled={isSavingProfile} className="w-1/2 bg-[#003366] text-white text-xs font-bold py-2.5 rounded hover:bg-black transition">{isSavingProfile ? "Saving..." : "Save"}</button>
-               </div>
-            </form>
-          ) : (
-            <div className="flex flex-col gap-4 w-full animate-in fade-in duration-300">
-               <div>
-                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Full Name</p>
-                 <p className="text-sm font-bold text-black">{profileData.fullName || <span className="text-gray-300 italic">Not set</span>}</p>
-               </div>
-               <div>
-                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Phone Number</p>
-                 <p className="text-sm font-bold text-black">{profileData.phone || <span className="text-gray-300 italic">Not set</span>}</p>
-               </div>
-               <div>
-                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Address</p>
-                 <p className="text-sm font-bold text-black">{profileData.address || <span className="text-gray-300 italic">Not set</span>}</p>
-               </div>
-            </div>
-          )}
-
-          <div className="w-full mt-8 border-t border-gray-100 pt-6">
-            <button onClick={handleLogout} className="text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-lg uppercase tracking-widest px-6 py-3.5 transition w-full">
-              Secure Sign Out
-            </button>
-          </div>
+      {showWelcome && (
+        <div className="w-full bg-[#003366] text-white p-4 rounded-xl mb-8 flex items-center justify-center animate-in fade-in slide-in-from-top-4 duration-500 shadow-lg transition-opacity">
+          <span className="text-sm md:text-base font-black uppercase tracking-widest">
+            Welcome!
+          </span>
         </div>
+      )}
 
-        {/* Original Document Vault Maintained */}
-        <div className="bg-white p-8 border border-gray-200 shadow-sm rounded-xl">
-          <h3 className="text-xs font-black text-black uppercase tracking-widest border-b border-gray-100 pb-4 mb-6">Document Vault</h3>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between p-4 border border-green-100 bg-green-50/50 rounded-lg">
-              <div className="flex items-center gap-4">
-                <span className="text-green-600 text-lg">✓</span>
-                <div>
-                  <p className="text-[11px] font-bold text-black uppercase tracking-wider">Driving License</p>
-                  <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mt-0.5">Verified</p>
-                </div>
+      <div className="flex flex-col lg:flex-row gap-16">
+        {/* ----------------------------------------- */}
+        {/* LEFT COLUMN: PERSONAL DETAILS & KYC */}
+        {/* ----------------------------------------- */}
+        <div className="w-full lg:w-1/3 flex flex-col gap-8">
+          
+          <div className="bg-white p-8 border border-gray-200 flex flex-col shadow-sm rounded-xl relative">
+            
+            <div className="flex justify-between items-start mb-6">
+               <div className="w-16 h-16 bg-[#003366] text-white rounded-full flex items-center justify-center text-2xl font-black uppercase shadow-md">
+                 {profileData.fullName ? profileData.fullName.charAt(0) : user?.email?.charAt(0)}
+               </div>
+               {!isEditingProfile && (
+                 <button 
+                   onClick={() => setIsEditingProfile(true)}
+                   className="text-[10px] font-bold text-gray-500 hover:text-[#003366] uppercase tracking-widest transition"
+                 >
+                   ✏️ Edit
+                 </button>
+               )}
+            </div>
+
+            <h2 className="text-xl font-black text-black tracking-tight truncate">{user?.email}</h2>
+            <p className="text-[10px] font-bold text-gray-400 mt-1 mb-6 uppercase tracking-widest">Account ID</p>
+            
+            {isEditingProfile ? (
+              <form onSubmit={handleSaveProfile} className="flex flex-col gap-4 w-full animate-in fade-in duration-300">
+                 <div>
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                   <input type="text" required value={profileData.fullName} onChange={(e) => setProfileData({...profileData, fullName: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none" />
+                 </div>
+                 <div>
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Phone Number</label>
+                   <input type="tel" required value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none" />
+                 </div>
+                 <div>
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Address</label>
+                   <textarea rows={2} value={profileData.address} onChange={(e) => setProfileData({...profileData, address: e.target.value})} className="w-full border-2 border-gray-200 rounded p-2 text-sm focus:border-[#003366] outline-none resize-none" />
+                 </div>
+                 <div className="flex gap-2 mt-2">
+                    <button type="button" onClick={() => setIsEditingProfile(false)} className="w-1/2 bg-gray-100 text-gray-600 text-xs font-bold py-2.5 rounded hover:bg-gray-200 transition">Cancel</button>
+                    <button type="submit" disabled={isSavingProfile} className="w-1/2 bg-[#003366] text-white text-xs font-bold py-2.5 rounded hover:bg-black transition">{isSavingProfile ? "Saving..." : "Save"}</button>
+                 </div>
+              </form>
+            ) : (
+              <div className="flex flex-col gap-4 w-full animate-in fade-in duration-300">
+                 <div>
+                   <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Full Name</p>
+                   <p className="text-sm font-bold text-black">{profileData.fullName || <span className="text-gray-300 italic">Not set</span>}</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Phone Number</p>
+                   <p className="text-sm font-bold text-black">{profileData.phone || <span className="text-gray-300 italic">Not set</span>}</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Address</p>
+                   <p className="text-sm font-bold text-black">{profileData.address || <span className="text-gray-300 italic">Not set</span>}</p>
+                 </div>
               </div>
-              <button className="text-[10px] font-bold text-gray-400 hover:text-[#003366] uppercase tracking-widest transition">View</button>
+            )}
+
+            <div className="w-full mt-8 border-t border-gray-100 pt-6">
+              <button onClick={handleLogout} className="text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-lg uppercase tracking-widest px-6 py-3.5 transition w-full">
+                Secure Sign Out
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white p-8 border border-gray-200 shadow-sm rounded-xl">
+            <h3 className="text-xs font-black text-black uppercase tracking-widest border-b border-gray-100 pb-4 mb-6">Document Vault</h3>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between p-4 border border-green-100 bg-green-50/50 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <span className="text-green-600 text-lg">✓</span>
+                  <div>
+                    <p className="text-[11px] font-bold text-black uppercase tracking-wider">Driving License</p>
+                    <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mt-0.5">Verified</p>
+                  </div>
+                </div>
+                <button className="text-[10px] font-bold text-gray-400 hover:text-[#003366] uppercase tracking-widest transition">View</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ----------------------------------------- */}
-      {/* RIGHT COLUMN: DYNAMIC BOOKING HISTORY */}
-      {/* ----------------------------------------- */}
-      <div className="flex-grow flex flex-col gap-12">
-        <div>
-          <h2 className="text-3xl font-black text-black tracking-tight border-b border-gray-200 pb-4 mb-8">My Bookings</h2>
+        {/* ----------------------------------------- */}
+        {/* RIGHT COLUMN: DYNAMIC BOOKING HISTORY */}
+        {/* ----------------------------------------- */}
+        <div className="grow flex flex-col gap-12">
+          <div>
+            <h2 className="text-3xl font-black text-black tracking-tight border-b border-gray-200 pb-4 mb-8">My Bookings</h2>
 
-          {isLoadingBookings ? (
-            <div className="w-full py-20 flex flex-col items-center justify-center gap-4">
-              <div className="w-10 h-10 border-4 border-gray-200 border-t-[#003366] rounded-full animate-spin"></div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Fetching your trips...</p>
-            </div>
-          ) : (
-            <>
-              {activeBookings.length > 0 && (
-                <div className="mb-10 animate-in fade-in duration-300">
-                  <h3 className="text-[10px] font-bold text-[#003366] uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-[#003366] rounded-full animate-pulse"></span>
-                    Active Now
-                  </h3>
-                  <div className="flex flex-col gap-6">
-                    {activeBookings.map(booking => <BookingCard key={booking.id} booking={booking} isActive={true} />)}
+            {isLoadingBookings ? (
+              <div className="w-full py-20 flex flex-col items-center justify-center gap-4">
+                <div className="w-10 h-10 border-4 border-gray-200 border-t-[#003366] rounded-full animate-spin"></div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Fetching your trips...</p>
+              </div>
+            ) : (
+              <>
+                {activeBookings.length > 0 && (
+                  <div className="mb-10 animate-in fade-in duration-300">
+                    <h3 className="text-[10px] font-bold text-[#003366] uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-[#003366] rounded-full animate-pulse"></span>
+                      Active Now
+                    </h3>
+                    <div className="flex flex-col gap-6">
+                      {activeBookings.map(booking => <BookingCard key={booking.id} booking={booking} isActive={true} />)}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {upcomingBookings.length > 0 && (
-                <div className="mb-10 animate-in fade-in duration-300 delay-100">
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Upcoming Trips</h3>
-                  <div className="flex flex-col gap-6">
-                    {upcomingBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
+                {upcomingBookings.length > 0 && (
+                  <div className="mb-10 animate-in fade-in duration-300 delay-100">
+                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Upcoming Trips</h3>
+                    <div className="flex flex-col gap-6">
+                      {upcomingBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {pastBookings.length > 0 && (
-                <div className="mb-10 animate-in fade-in duration-300 delay-200">
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Past Trips</h3>
-                  <div className="flex flex-col gap-4">
-                    {pastBookings.map(booking => <PastBookingCard key={booking.id} booking={booking} />)}
+                {pastBookings.length > 0 && (
+                  <div className="mb-10 animate-in fade-in duration-300 delay-200">
+                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Past Trips</h3>
+                    <div className="flex flex-col gap-4">
+                      {pastBookings.map(booking => <PastBookingCard key={booking.id} booking={booking} />)}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {activeBookings.length === 0 && upcomingBookings.length === 0 && pastBookings.length === 0 && (
-                <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                   <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                   <h3 className="text-lg font-black text-black mb-2">No Bookings Yet</h3>
-                   <p className="text-sm text-gray-500 mb-6">You haven't rented any vehicles with us yet.</p>
-                   <a href="/cars" className="bg-black text-white px-6 py-3 rounded-lg font-black text-xs uppercase tracking-widest hover:bg-[#003366] transition shadow-md inline-block">
-                     Browse Fleet
-                   </a>
-                </div>
-              )}
-            </>
-          )}
+                {activeBookings.length === 0 && upcomingBookings.length === 0 && pastBookings.length === 0 && (
+                  <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                     <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                     <h3 className="text-lg font-black text-black mb-2">No Bookings Yet</h3>
+                     <p className="text-sm text-gray-500 mb-6">You haven&apos;t rented any vehicles with us yet.</p>
+                     <a href="/cars" className="bg-black text-white px-6 py-3 rounded-lg font-black text-xs uppercase tracking-widest hover:bg-[#003366] transition shadow-md inline-block">
+                       Browse Fleet
+                     </a>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -391,7 +403,7 @@ function CustomerProfileContent() {
       {/* MODAL 1: CANCELLATION REQUEST */}
       {/* ----------------------------------------- */}
       {showCancelModal && actionBooking && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md flex flex-col relative">
             <h2 className="text-xl font-black text-red-600 mb-2 uppercase tracking-tight">Request Cancellation</h2>
             <p className="text-sm text-gray-500 font-medium mb-6">
@@ -429,14 +441,13 @@ function CustomerProfileContent() {
       {/* MODAL 2: CHANGE REQUEST (WITH DATES) */}
       {/* ----------------------------------------- */}
       {showChangeModal && actionBooking && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col relative max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-black text-[#003366] mb-2 uppercase tracking-tight">Request a Change</h2>
             <p className="text-sm text-gray-500 font-medium mb-6">
               Need to alter your dates or instructions? Adjust your new preferred dates below and leave a message for the vendor.
             </p>
             
-            {/* Date Selection Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">New Pickup Date & Time</label>
@@ -489,9 +500,6 @@ function CustomerProfileContent() {
     </main>
   );
 
-  // -----------------------------------------
-  // REUSABLE UI COMPONENT: DETAILED BOOKING CARD
-  // -----------------------------------------
   function BookingCard({ booking, isActive = false }: { booking: Booking, isActive?: boolean }) {
     
     const isCancelPending = booking.cancellationRequested || booking.status === "cancellation_pending";
@@ -502,7 +510,6 @@ function CustomerProfileContent() {
     return (
       <div className={`bg-white p-6 border rounded-xl flex flex-col gap-4 transition duration-300 shadow-sm ${isActive ? 'border-l-4 border-l-[#003366] border-gray-200 hover:shadow-md' : 'border-gray-200 hover:border-black opacity-95 hover:opacity-100'}`}>
         
-        {/* Top Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-4">
           <div className="flex items-center gap-5">
             <div className="w-16 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-[8px] font-black uppercase tracking-widest border border-gray-200">
@@ -515,7 +522,6 @@ function CustomerProfileContent() {
           </div>
           <div className="flex flex-col items-start md:items-end">
             <span className="text-2xl font-black text-[#003366]">₹{booking.totalPaid.toLocaleString()}</span>
-            {/* --- UPGRADED STATUS BADGES --- */}
             {booking.status === "pending_verification" ? (
                <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded uppercase tracking-widest mt-1">Payment Pending</span>
             ) : isRejected ? (
@@ -530,7 +536,6 @@ function CustomerProfileContent() {
           </div>
         </div>
 
-        {/* Middle Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
           <div className="flex flex-col gap-3">
             <div>
@@ -558,17 +563,14 @@ function CustomerProfileContent() {
           </div>
         </div>
 
-        {/* --- VENDOR REMARK DISPLAY --- */}
         {booking.vendorRemark && (
           <div className={`p-4 rounded-lg mt-2 ${isRejected || isCancelled ? 'bg-red-50 border border-red-100' : 'bg-blue-50 border border-blue-100'}`}>
             <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isRejected || isCancelled ? 'text-red-800' : 'text-[#003366]'}`}>Message from Vendor</p>
-            <p className={`text-sm font-bold italic ${isRejected || isCancelled ? 'text-red-900' : 'text-blue-900'}`}>"{booking.vendorRemark}"</p>
+            <p className={`text-sm font-bold italic ${isRejected || isCancelled ? 'text-red-900' : 'text-blue-900'}`}>&quot;{booking.vendorRemark}&quot;</p>
           </div>
         )}
 
-        {/* --- CUSTOMER ACTIONS PANEL --- */}
         <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-2">
-          
           <button 
             onClick={() => openChangeModal(booking)}
             disabled={isChangePending || isCancelPending || isRejected || isCancelled}
@@ -584,15 +586,11 @@ function CustomerProfileContent() {
           >
             {isCancelPending ? "⏳ Cancellation Pending" : "Request Cancellation"}
           </button>
-
         </div>
       </div>
     );
   }
 
-  // -----------------------------------------
-  // REUSABLE UI COMPONENT: PAST BOOKING SLIVER
-  // -----------------------------------------
   function PastBookingCard({ booking }: { booking: Booking }) {
     const router = useRouter();
     return (
@@ -619,7 +617,7 @@ function CustomerProfileContent() {
 
 export default function CustomerProfile() {
   return (
-    <Suspense fallback={<div className="flex-grow flex items-center justify-center w-full min-h-screen bg-gray-50"><p className="text-xs font-bold uppercase tracking-widest text-gray-400 animate-pulse">Loading Secure Profile...</p></div>}>
+    <Suspense fallback={<div className="grow flex items-center justify-center w-full min-h-screen bg-gray-50"><p className="text-xs font-bold uppercase tracking-widest text-gray-400 animate-pulse">Loading Secure Profile...</p></div>}>
       <CustomerProfileContent />
     </Suspense>
   );
