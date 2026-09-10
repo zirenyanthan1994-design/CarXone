@@ -1,51 +1,105 @@
 import { NextResponse } from 'next/server';
 
-// This is your secure backend. No hackers can see this code!
+// ==========================================
+// 1. GET ROUTE: FOR META WEBHOOK VERIFICATION
+// ==========================================
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const mode = searchParams.get('hub.mode');
+  const token = searchParams.get('hub.verify_token');
+  const challenge = searchParams.get('hub.challenge');
+
+  // This checks the password you set in your .env.local file
+  const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+
+  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+    console.log('Webhook verified successfully!');
+    return new NextResponse(challenge, { status: 200 });
+  }
+  return new NextResponse('Forbidden', { status: 403 });
+}
+
+// ==========================================
+// 2. POST ROUTE: FOR SENDING & RECEIVING
+// ==========================================
 export async function POST(request: Request) {
   try {
-    // 1. Receive the whisper from the frontend
     const body = await request.json();
-    const { type, vendorPhone, customerPhone, customerDetails, vendorDetails, vehicleName } = body;
 
-    // 2. Draft the messages based on the "type" of event
-    let targetPhone = "";
-    let finalMessage = "";
-
-    if (type === "NEW_BOOKING") {
-      // Message to Vendor
-      targetPhone = vendorPhone;
-      finalMessage = `🚨 *New Booking Request!*\n\nYou have a new request for your ${vehicleName}.\n\n*Customer Details:*\n${customerDetails}\n\nPlease log in to your CarXone Partner Dashboard to verify the payment and confirm the booking!`;
-    } 
-    else if (type === "BOOKING_CONFIRMED") {
-      // Message to Customer
-      targetPhone = customerPhone;
-      finalMessage = `✅ *Booking Confirmed!*\n\nGreat news! Your booking for the ${vehicleName} is confirmed.\n\n*Vendor Details:*\n${vendorDetails}\n\nPlease contact them directly to coordinate your pickup!`;
+    // ---------------------------------------------------------
+    // A. Handle incoming Meta Webhook pings (Read receipts, etc.)
+    // ---------------------------------------------------------
+    // Meta will periodically send POST requests here. This catches them so your server doesn't crash.
+    if (body.object === 'whatsapp_business_account') {
+      console.log("Received incoming webhook event from Meta");
+      return NextResponse.json({ success: true }, { status: 200 });
     }
 
-    // 3. SEND TO WHATSAPP API (Example using standard fetch)
-    // NOTE: You will replace the URL and Authorization Bearer with your actual provider (Twilio, Meta, etc.)
-    /*
-    await fetch('https://graph.facebook.com/v17.0/YOUR_PHONE_NUMBER_ID/messages', {
+    // ---------------------------------------------------------
+    // B. Your existing logic for sending messages from frontend
+    // ---------------------------------------------------------
+    const { type, vendorPhone, customerPhone, customerDetails, vendorDetails, vehicleName } = body;
+
+    const token = process.env.WHATSAPP_ACCESS_TOKEN;
+    const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+    let targetPhone = "";
+    let templateName = "";
+    let parameters = [];
+
+    if (type === "NEW_BOOKING") {
+      targetPhone = vendorPhone;
+      templateName = "new_booking_alert"; // Must exactly match your Meta template name
+      parameters = [
+        { type: "text", text: vehicleName },
+        { type: "text", text: customerDetails }
+      ];
+    } else if (type === "BOOKING_CONFIRMED") {
+      targetPhone = customerPhone;
+      templateName = "booking_confirmed"; // Must exactly match your Meta template name
+      parameters = [
+        { type: "text", text: vehicleName },
+        { type: "text", text: vendorDetails }
+      ];
+    } else {
+      return NextResponse.json({ error: "Invalid event type" }, { status: 400 });
+    }
+
+    // Send the formatted template to Meta Graph API
+    const response = await fetch(`https://graph.facebook.com/v17.0/${phoneId}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer YOUR_SECRET_WHATSAPP_API_TOKEN`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messaging_product: "whatsapp",
+        messaging_product: 'whatsapp',
         to: targetPhone,
-        type: "text",
-        text: { body: finalMessage }
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: 'en_US' }, // Ensure this matches your template language code
+          components: [
+            {
+              type: "body",
+              parameters: parameters
+            }
+          ]
+        }
       })
     });
-    */
 
-    // 4. Tell the frontend it was a success!
-    console.log(`SUCCESS: Simulated WhatsApp sent to ${targetPhone}`);
-    return NextResponse.json({ success: true, message: "WhatsApp sent!" });
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("WhatsApp API Error:", data);
+      return NextResponse.json({ success: false, error: data }, { status: response.status });
+    }
+
+    return NextResponse.json({ success: true, data });
 
   } catch (error) {
-    console.error("WhatsApp Engine Error:", error);
-    return NextResponse.json({ success: false, error: "Failed to send message" }, { status: 500 });
+    console.error("Internal Server Error:", error);
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }

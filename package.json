@@ -11,6 +11,7 @@
   "dependencies": {
     "@capacitor/android": "^8.5.0",
     "@capacitor/core": "^8.5.0",
+    "express": "^5.2.1",
     "firebase": "^12.13.0",
     "next": "16.2.6",
     "react": "19.2.4",
@@ -29,5 +30,19 @@
     "postcss": "^8.5.14",
     "tailwindcss": "^4.3.0",
     "typescript": "^5"
-  }
+  },
+  "description": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zirenyanthan1994-design/CarXone.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/zirenyanthan1994-design/CarXone/issues"
+  },
+  "homepage": "https://github.com/zirenyanthan1994-design/CarXone#readme"
 }
