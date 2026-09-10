@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic'; // <-- Add this line
+
 // ==========================================
 // 1. GET ROUTE: FOR META WEBHOOK VERIFICATION
 // ==========================================

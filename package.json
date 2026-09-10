@@ -40,7 +40,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/zirenyanthan1994-design/CarXone/issues"
   },
